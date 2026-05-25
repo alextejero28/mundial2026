@@ -1,4 +1,4 @@
-// Interactive Zoom & Pan for World Cup Bracket
+// Interactive Zoom & Pan for World Cup Bracket (Mobile Frame only)
 document.addEventListener('DOMContentLoaded', () => {
   initBracketZoomPan();
 });
@@ -8,16 +8,7 @@ function initBracketZoomPan() {
   const container = document.getElementById('bracket-container');
   if (!wrapper || !container) return;
 
-  // Apply wrapper viewport styles
-  wrapper.style.overflow = 'hidden';
-  wrapper.style.position = 'relative';
-  wrapper.style.cursor = 'grab';
-  wrapper.style.userSelect = 'none';
-  wrapper.style.touchAction = 'none'; // prevent native scrolling/gestures in this area
-
-  // Apply container rendering optimization styles
-  container.style.transformOrigin = '0 0';
-  container.style.transition = 'transform 0.15s ease-out';
+  const isMobile = () => window.innerWidth < 992;
 
   let scale = 1.0;
   let translateX = 0;
@@ -30,51 +21,110 @@ function initBracketZoomPan() {
   // Pinch-to-zoom coordinates
   let startDistance = 0;
   let startScale = 1.0;
-  let midPoint = { x: 0, y: 0 };
+  const midPoint = { x: 0, y: 0 };
 
-  const isMobile = () => window.innerWidth < 992;
+  const activePointers = {};
 
-  // Reset viewport zoom/pan based on current screen size
+  // Create Zoom control panel dynamically
+  const controls = document.createElement('div');
+  controls.className = 'bracket-zoom-controls';
+  
+  const btnIn = document.createElement('button');
+  btnIn.innerHTML = '＋';
+  btnIn.title = 'Acercar';
+  btnIn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!isMobile()) return;
+    container.style.transition = 'transform 0.15s ease-out';
+    scale = Math.min(2.0, scale + 0.35); // Faster zoom step
+    applyTransform();
+  });
+
+  const btnOut = document.createElement('button');
+  btnOut.innerHTML = '－';
+  btnOut.title = 'Alejar';
+  btnOut.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!isMobile()) return;
+    container.style.transition = 'transform 0.15s ease-out';
+    scale = Math.max(0.12, scale - 0.35); // Faster zoom step
+    applyTransform();
+  });
+
+  const btnReset = document.createElement('button');
+  btnReset.innerHTML = '🔄';
+  btnReset.title = 'Ajustar Vista';
+  btnReset.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!isMobile()) return;
+    container.style.transition = 'transform 0.25s ease-out';
+    resetViewport();
+  });
+
+  controls.appendChild(btnIn);
+  controls.appendChild(btnOut);
+  controls.appendChild(btnReset);
+  wrapper.appendChild(controls);
+
+  // Set initial viewport layout
   function resetViewport() {
-    // If the wrapper is hidden (display: none), don't calculate sizes yet
-    if (wrapper.offsetWidth === 0) return;
-
-    if (isMobile()) {
-      // Scale down to fit mobile screens comfortably
-      // Bracket approximate width is 2430px (9 columns * 270px). Let's compute scale dynamically
-      const wrapperWidth = wrapper.clientWidth;
-      scale = Math.max(0.18, Math.min(0.8, wrapperWidth / 2430));
-      
-      // Center horizontally, start near top
-      translateX = Math.max(10, (wrapperWidth - (2430 * scale)) / 2);
-      translateY = 15;
-    } else {
-      scale = 1.0;
-      translateX = 0;
-      translateY = 0;
+    if (!isMobile()) {
+      // Restore standard desktop layout rules (clear inline transforms)
+      container.style.transform = '';
+      container.style.transition = '';
+      container.style.position = '';
+      container.style.transformOrigin = '';
+      wrapper.style.cursor = '';
+      wrapper.style.touchAction = '';
+      return;
     }
+
+    if (wrapper.offsetWidth === 0) return; // ignore if hidden
+
+    // Apply mobile frame inline styles
+    wrapper.style.touchAction = 'none';
+    wrapper.style.cursor = 'grab';
+    container.style.position = 'absolute';
+    container.style.transformOrigin = '0 0';
+
+    const wrapperWidth = wrapper.clientWidth;
+    const wrapperHeight = wrapper.clientHeight;
+
+    // Total width of bracket is 9 columns * 270px + gaps = ~2430px
+    // Fit bracket horizontally inside the frame width with a smaller initial zoom (multiplied by 0.85)
+    const fitScale = Math.max(0.12, Math.min(1.0, (wrapperWidth - 20) / 2430));
+    scale = fitScale * 0.85; // Default zoom not so big
+
+    // Center horizontally
+    translateX = Math.max(0, (wrapperWidth - (2430 * scale)) / 2);
+    // Center vertically inside the frame height (approx height is 900px)
+    translateY = Math.max(10, (wrapperHeight - (900 * scale)) / 2);
+
+    container.style.transition = 'transform 0.25s ease-out';
     applyTransform();
   }
 
   function applyTransform() {
+    if (!isMobile()) return;
     container.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
   }
 
-  // Pan event executors
+  // Drag actions
   function dragStart(clientX, clientY) {
+    if (!isMobile()) return;
     isDragging = true;
     startX = clientX - translateX;
     startY = clientY - translateY;
     wrapper.style.cursor = 'grabbing';
-    container.style.transition = 'none'; // Disable transition for 60fps dragging
+    container.style.transition = 'none';
   }
 
   function dragMove(clientX, clientY) {
-    if (!isDragging) return;
+    if (!isDragging || !isMobile()) return;
     translateX = clientX - startX;
     translateY = clientY - startY;
 
-    // Boundary constraints: Keep at least 150px of the bracket visible inside the viewport
+    // Boundary constraints: Keep at least 150px of the bracket visible inside the viewport frame
     const rect = container.getBoundingClientRect();
     const wrapperWidth = wrapper.clientWidth;
     const wrapperHeight = wrapper.clientHeight;
@@ -91,13 +141,17 @@ function initBracketZoomPan() {
   function dragEnd() {
     if (!isDragging) return;
     isDragging = false;
-    wrapper.style.cursor = 'grab';
-    container.style.transition = 'transform 0.15s ease-out';
+    if (isMobile()) {
+      wrapper.style.cursor = 'grab';
+      container.style.transition = 'transform 0.15s ease-out';
+    }
   }
 
-  // Mouse pan event listeners
+  // Mouse drag event listeners
   wrapper.addEventListener('mousedown', (e) => {
-    // Prevent dragging when interacting with team rows, inputs, or buttons
+    if (!isMobile()) return;
+    
+    // Ignore drag when clicking interactive elements or team cards
     if (
       e.target.tagName === 'INPUT' || 
       e.target.tagName === 'BUTTON' || 
@@ -106,13 +160,13 @@ function initBracketZoomPan() {
     ) {
       return;
     }
-    if (e.button !== 0) return; // Left click only
+    if (e.button !== 0) return; // Left click drag only
     e.preventDefault();
     dragStart(e.clientX, e.clientY);
   });
 
   window.addEventListener('mousemove', (e) => {
-    if (isDragging) {
+    if (isDragging && isMobile()) {
       dragMove(e.clientX, e.clientY);
     }
   });
@@ -121,26 +175,10 @@ function initBracketZoomPan() {
     dragEnd();
   });
 
-  // Touch pan & zoom event listeners
+  // Touch pointer events (support single-pointer dragging & double-pointer pinch-zoom)
   wrapper.addEventListener('pointerdown', (e) => {
-    // Bypass on inputs and buttons
-    if (
-      e.target.tagName === 'INPUT' || 
-      e.target.tagName === 'BUTTON' || 
-      e.target.closest('.bracket-team-row') ||
-      e.target.closest('.penalty-badge-btn')
-    ) {
-      return;
-    }
+    if (!isMobile()) return;
     
-    // We use pointer events to support multiple touch points cleanly
-    dragStart(e.clientX, e.clientY);
-  });
-
-  // For touch devices, handle single-touch drag and double-touch pinch zoom
-  const activePointers = {};
-
-  wrapper.addEventListener('pointerdown', (e) => {
     if (
       e.target.tagName === 'INPUT' || 
       e.target.tagName === 'BUTTON' || 
@@ -149,11 +187,14 @@ function initBracketZoomPan() {
     ) {
       return;
     }
+
     activePointers[e.pointerId] = { x: e.clientX, y: e.clientY };
     
     const pointerKeys = Object.keys(activePointers);
-    if (pointerKeys.length === 2) {
-      isDragging = false; // Disable normal pan
+    if (pointerKeys.length === 1) {
+      dragStart(e.clientX, e.clientY);
+    } else if (pointerKeys.length === 2) {
+      isDragging = false;
       container.style.transition = 'none';
       
       const p1 = activePointers[pointerKeys[0]];
@@ -161,13 +202,14 @@ function initBracketZoomPan() {
       startDistance = Math.hypot(p1.x - p2.x, p1.y - p2.y);
       startScale = scale;
 
-      // Track midpoint to scale around it
       midPoint.x = (p1.x + p2.x) / 2;
       midPoint.y = (p1.y + p2.y) / 2;
     }
   });
 
   window.addEventListener('pointermove', (e) => {
+    if (!isMobile()) return;
+    
     if (activePointers[e.pointerId]) {
       activePointers[e.pointerId] = { x: e.clientX, y: e.clientY };
     }
@@ -182,9 +224,8 @@ function initBracketZoomPan() {
       
       if (startDistance > 0) {
         const ratio = currentDist / startDistance;
-        const newScale = Math.max(0.15, Math.min(2.0, startScale * ratio));
+        const newScale = Math.max(0.12, Math.min(2.0, startScale * ratio));
         
-        // Simple zoom around the midpoint
         const zoomFactor = newScale / scale;
         scale = newScale;
         
@@ -211,17 +252,16 @@ function initBracketZoomPan() {
   window.addEventListener('pointerup', removePointer);
   window.addEventListener('pointercancel', removePointer);
 
-  // Wheel zoom listener (Zoom via Ctrl + Mouse Wheel)
+  // Wheel zoom inside the frame widget
   wrapper.addEventListener('wheel', (e) => {
+    if (!isMobile()) return;
     e.preventDefault();
     container.style.transition = 'transform 0.1s ease-out';
     
-    // Zoom factor
-    const zoomIntensity = 0.05;
+    const zoomIntensity = 0.12; // Faster mouse wheel zoom
     const zoomFactor = e.deltaY < 0 ? (1 + zoomIntensity) : (1 - zoomIntensity);
-    const newScale = Math.max(0.15, Math.min(2.0, scale * zoomFactor));
+    const newScale = Math.max(0.12, Math.min(2.0, scale * zoomFactor));
 
-    // Scale around cursor coordinate
     const rect = wrapper.getBoundingClientRect();
     const cursorX = e.clientX - rect.left;
     const cursorY = e.clientY - rect.top;
@@ -233,48 +273,7 @@ function initBracketZoomPan() {
     applyTransform();
   }, { passive: false });
 
-  // Floating zoom control buttons
-  const controls = document.createElement('div');
-  controls.className = 'bracket-zoom-controls';
-  
-  const btnIn = document.createElement('button');
-  btnIn.innerHTML = '＋';
-  btnIn.title = 'Acercar';
-  btnIn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    container.style.transition = 'transform 0.2s ease-out';
-    scale = Math.min(2.0, scale + 0.15);
-    applyTransform();
-  });
-
-  const btnOut = document.createElement('button');
-  btnOut.innerHTML = '－';
-  btnOut.title = 'Alejar';
-  btnOut.addEventListener('click', (e) => {
-    e.stopPropagation();
-    container.style.transition = 'transform 0.2s ease-out';
-    scale = Math.max(0.15, scale - 0.15);
-    applyTransform();
-  });
-
-  const btnReset = document.createElement('button');
-  btnReset.innerHTML = '🔄';
-  btnReset.title = 'Restablecer';
-  btnReset.addEventListener('click', (e) => {
-    e.stopPropagation();
-    container.style.transition = 'transform 0.3s ease-out';
-    resetViewport();
-  });
-
-  controls.appendChild(btnIn);
-  controls.appendChild(btnOut);
-  controls.appendChild(btnReset);
-  wrapper.appendChild(controls);
-
-  // Initialize
-  resetViewport();
-
-  // Watch for visibility changes to the bracket section
+  // Watch for visibility changes to initialize coordinates correctly
   const bracketSection = document.getElementById('bracket-section');
   if (bracketSection) {
     const observer = new MutationObserver((mutations) => {
@@ -290,7 +289,10 @@ function initBracketZoomPan() {
     observer.observe(bracketSection, { attributes: true, attributeFilter: ['style'] });
   }
 
-  // Handle screen resize
+  // Initial load
+  resetViewport();
+
+  // Screen resizing
   let resizeTimeout;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimeout);
