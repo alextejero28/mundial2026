@@ -7,19 +7,22 @@
   <title>Simulador Mundial 2026 - Simulación Estadística FIFA</title>
   <meta name="description"
     content="Simula de forma automática y probabilística el transcurso del Mundial 2026 usando los ratings oficiales de fuerza de la FIFA. ¡Descubre quién tiene más probabilidad de campeonar!">
-  <meta name="keywords" content="simulador mundial 2026, simular mundial, simulación copa del mundo, probabilidades fifa, simular grupos futbol, rating fifa mundial, simulador bracket mundial">
+  <meta name="keywords"
+    content="simulador mundial 2026, simular mundial, simulación copa del mundo, probabilidades fifa, simular grupos futbol, rating fifa mundial, simulador bracket mundial">
   <meta name="theme-color" content="#0a0f1e">
-  
+
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
   <meta property="og:title" content="Simulador Mundial 2026 - Simulación Estadística FIFA">
-  <meta property="og:description" content="Simula de forma automática y probabilística el transcurso del Mundial 2026 usando los ratings oficiales de fuerza de la FIFA.">
+  <meta property="og:description"
+    content="Simula de forma automática y probabilística el transcurso del Mundial 2026 usando los ratings oficiales de fuerza de la FIFA.">
   <meta property="og:image" content="mundial_logo.png">
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Simulador Mundial 2026 - Simulación Estadística FIFA">
-  <meta name="twitter:description" content="Simula de forma automática y probabilística el transcurso del Mundial 2026 usando los ratings oficiales de fuerza de la FIFA.">
+  <meta name="twitter:description"
+    content="Simula de forma automática y probabilística el transcurso del Mundial 2026 usando los ratings oficiales de fuerza de la FIFA.">
   <meta name="twitter:image" content="mundial_logo.png">
 
   <link rel="icon" type="image/png" href="mundial_logo.png">
@@ -68,8 +71,10 @@
       <!-- Header Top -->
       <header class="header-top" style="justify-content: center;">
         <div style="display: flex; align-items: center; justify-content: center; width: 100%; position: relative;">
-          <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Abrir menú" style="position: absolute; left: 0;">☰</button>
-          <div class="header-info" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+          <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Abrir menú"
+            style="position: absolute; left: 0;">☰</button>
+          <div class="header-info"
+            style="display: flex; flex-direction: column; align-items: center; text-align: center;">
             <h1>Simulador Mundial 2026</h1>
             <p class="subtitle">Simulador Automático (Basado en Ratings FIFA)</p>
           </div>
@@ -78,7 +83,8 @@
 
       <main style="padding: 2rem;">
         <!-- Controls Panel -->
-        <div class="controls-container" style="margin-top: 0; max-width: none; margin-bottom: 2rem; justify-content: center;">
+        <div class="controls-container"
+          style="margin-top: 0; max-width: none; margin-bottom: 2rem; justify-content: center;">
           <div class="prediction-stats" style="gap: 1rem; margin-right: 1rem;">
             <div class="stat-item">
               <span class="stat-dot" id="sim-group-dot"></span>
@@ -100,7 +106,7 @@
             <button id="btn-sim-all" class="btn btn-primary" title="Simular todo el torneo completo de una vez">
               ⚡ Simular Todo
             </button>
-            <button id="btn-reset-sim" class="btn btn-reset" title="Restablecer simulación">
+            <button id="btn-reset-sim" class="btn btn-reset disabled" title="Restablecer simulación" disabled>
               🔄 Reiniciar
             </button>
           </div>
@@ -120,14 +126,14 @@
 
         <!-- Toggle buttons for views in Simulator -->
         <div class="view-tabs">
-          <button id="btn-show-groups" class="btn btn-accent">Ver Fase de Grupos</button>
-          <button id="btn-show-bracket" class="btn">Ver Eliminatorias</button>
+          <button id="btn-show-groups" class="btn btn-accent">Fase de Grupos</button>
+          <button id="btn-show-bracket" class="btn">Eliminatorias</button>
         </div>
 
         <!-- Groups Section -->
         <section id="groups-section">
-          <h2 style="text-align: center; margin-bottom: 1.5rem; color: var(--accent-gold); letter-spacing: 1px;">Tablas
-            de Clasificación y Resultados</h2>
+          <h2 style="text-align: center; margin-bottom: 1.5rem; color: var(--accent-gold); letter-spacing: 1px;">
+            Clasificación</h2>
           <div class="groups-grid" id="groups-container">
             <!-- Rendered dynamically by simulador.js -->
           </div>
@@ -140,8 +146,8 @@
 
         <!-- Bracket Section -->
         <section id="bracket-section" style="display: none;">
-          <h2 style="text-align: center; margin-bottom: 1.5rem; color: var(--accent-gold); letter-spacing: 1px;">Árbol
-            de Eliminatorias (Simulado)</h2>
+          <h2 style="text-align: center; margin-bottom: 1.5rem; color: var(--accent-gold); letter-spacing: 1px;">
+            Brackets</h2>
           <div class="bracket-wrapper" id="bracket-scroll-container">
             <div class="bracket-container" id="bracket-container">
               <!-- Rendered dynamically by simulador.js -->

@@ -169,7 +169,13 @@ function updateStatsBadge() {
   // Update navigation and reset buttons state
   const nextBtn = document.getElementById('btn-next-step');
   if (nextBtn) {
-    nextBtn.disabled = !isStep1Complete();
+    const isNextDisabled = !isStep1Complete();
+    nextBtn.disabled = isNextDisabled;
+    if (isNextDisabled) {
+      nextBtn.classList.add('disabled');
+    } else {
+      nextBtn.classList.remove('disabled');
+    }
   }
 
   const resetBtn = document.getElementById('btn-reset-all');
@@ -178,7 +184,13 @@ function updateStatsBadge() {
     const hasAnyRankings = Object.values(groupRankings).some(arr => arr.length > 0);
     const hasAnyThirds = selectedThirds.length > 0;
     const hasAnyKoWinners = Object.keys(koWinners).length > 0;
-    resetBtn.disabled = !(hasAnyRankings || hasAnyThirds || hasAnyKoWinners);
+    const shouldDisable = !(hasAnyRankings || hasAnyThirds || hasAnyKoWinners);
+    resetBtn.disabled = shouldDisable;
+    if (shouldDisable) {
+      resetBtn.classList.add('disabled');
+    } else {
+      resetBtn.classList.remove('disabled');
+    }
   }
 }
 

@@ -911,6 +911,17 @@ function updateStatsBadge() {
       if (simKoDot) simKoDot.classList.remove('completed');
     }
   }
+
+  const resetBtn = document.getElementById('btn-reset-sim');
+  if (resetBtn) {
+    const shouldDisable = groupsDone === 0 && koDone === 0;
+    resetBtn.disabled = shouldDisable;
+    if (shouldDisable) {
+      resetBtn.classList.add('disabled');
+    } else {
+      resetBtn.classList.remove('disabled');
+    }
+  }
 }
 
 // -------------------------------------------------------------
