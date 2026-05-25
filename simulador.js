@@ -70,9 +70,7 @@ function setupEventListeners() {
   });
 
   document.getElementById('btn-reset-sim').addEventListener('click', () => {
-    if (confirm('¿Estás seguro de que quieres restablecer toda la simulación?')) {
-      resetSimulation();
-    }
+    resetSimulation();
   });
 
   // View toggle buttons

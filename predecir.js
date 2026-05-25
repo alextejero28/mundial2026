@@ -80,26 +80,24 @@ function setupEventListeners() {
 }
 
 function resetAllPredictionsFlow() {
-  if (confirm('¿Estás seguro de que quieres restablecer toda tu predicción y comenzar de nuevo?')) {
-    // Clear all states
-    groupRankings = {};
-    Object.keys(WORLD_CUP_DATA.groups).forEach(g => {
-      groupRankings[g] = [];
-    });
-    selectedThirds = [];
-    koWinners = {};
+  // Clear all states
+  groupRankings = {};
+  Object.keys(WORLD_CUP_DATA.groups).forEach(g => {
+    groupRankings[g] = [];
+  });
+  selectedThirds = [];
+  koWinners = {};
 
-    saveGroupRankings();
-    saveSelectedThirds();
-    saveKoWinners();
+  saveGroupRankings();
+  saveSelectedThirds();
+  saveKoWinners();
 
-    // Return to Step 1
-    document.getElementById('groups-section').style.display = 'block';
-    document.getElementById('bracket-section').style.display = 'none';
+  // Return to Step 1
+  document.getElementById('groups-section').style.display = 'block';
+  document.getElementById('bracket-section').style.display = 'none';
 
-    renderAll();
-    window.scrollTo(0, 0);
-  }
+  renderAll();
+  window.scrollTo(0, 0);
 }
 
 function invalidateKnockoutPredictions() {
