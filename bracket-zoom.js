@@ -9,6 +9,8 @@ function initBracketZoomPan() {
   if (!wrapper || !container) return;
 
   const isMobile = () => window.innerWidth < 992;
+  const MIN_SCALE = 0.45;
+  const MAX_SCALE = 1.5;
 
   let scale = 1.0;
   let translateX = 0;
@@ -25,46 +27,7 @@ function initBracketZoomPan() {
 
   const activePointers = {};
 
-  // Create Zoom control panel dynamically
-  const controls = document.createElement('div');
-  controls.className = 'bracket-zoom-controls';
-  
-  const btnIn = document.createElement('button');
-  btnIn.innerHTML = '＋';
-  btnIn.title = 'Acercar';
-  btnIn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (!isMobile()) return;
-    container.style.transition = 'transform 0.15s ease-out';
-    scale = Math.min(2.0, scale + 0.35); // Faster zoom step
-    applyTransform();
-  });
 
-  const btnOut = document.createElement('button');
-  btnOut.innerHTML = '－';
-  btnOut.title = 'Alejar';
-  btnOut.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (!isMobile()) return;
-    container.style.transition = 'transform 0.15s ease-out';
-    scale = Math.max(0.12, scale - 0.35); // Faster zoom step
-    applyTransform();
-  });
-
-  const btnReset = document.createElement('button');
-  btnReset.innerHTML = '🔄';
-  btnReset.title = 'Ajustar Vista';
-  btnReset.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (!isMobile()) return;
-    container.style.transition = 'transform 0.25s ease-out';
-    resetViewport();
-  });
-
-  controls.appendChild(btnIn);
-  controls.appendChild(btnOut);
-  controls.appendChild(btnReset);
-  wrapper.appendChild(controls);
 
   // Set initial viewport layout
   function resetViewport() {
@@ -90,15 +53,12 @@ function initBracketZoomPan() {
     const wrapperWidth = wrapper.clientWidth;
     const wrapperHeight = wrapper.clientHeight;
 
-    // Total width of bracket is 9 columns * 270px + gaps = ~2430px
-    // Fit bracket horizontally inside the frame width with a smaller initial zoom (multiplied by 0.85)
-    const fitScale = Math.max(0.12, Math.min(1.0, (wrapperWidth - 20) / 2430));
-    scale = fitScale * 0.85; // Default zoom not so big
+    // Set a larger initial zoom scale for mobile so it starts readable and not tiny
+    scale = 0.65;
 
-    // Center horizontally
-    translateX = Math.max(0, (wrapperWidth - (2430 * scale)) / 2);
-    // Center vertically inside the frame height (approx height is 900px)
-    translateY = Math.max(10, (wrapperHeight - (900 * scale)) / 2);
+    // Position it at the starting columns (left side of the bracket) with a clean offset
+    translateX = 15;
+    translateY = 15;
 
     container.style.transition = 'transform 0.25s ease-out';
     applyTransform();
@@ -224,7 +184,7 @@ function initBracketZoomPan() {
       
       if (startDistance > 0) {
         const ratio = currentDist / startDistance;
-        const newScale = Math.max(0.12, Math.min(2.0, startScale * ratio));
+        const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, startScale * ratio));
         
         const zoomFactor = newScale / scale;
         scale = newScale;
@@ -260,7 +220,7 @@ function initBracketZoomPan() {
     
     const zoomIntensity = 0.12; // Faster mouse wheel zoom
     const zoomFactor = e.deltaY < 0 ? (1 + zoomIntensity) : (1 - zoomIntensity);
-    const newScale = Math.max(0.12, Math.min(2.0, scale * zoomFactor));
+    const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale * zoomFactor));
 
     const rect = wrapper.getBoundingClientRect();
     const cursorX = e.clientX - rect.left;
