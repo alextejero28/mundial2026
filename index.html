@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mundial 2026 - Resultados en Vivo y Clasificación</title>
+  <meta name="description"
+    content="Sigue en tiempo real los resultados, estadísticas y la clasificación de la Copa del Mundo de la FIFA 2026. ¡Actualización automática al minuto!">
+  <meta name="keywords" content="Mundial 2026, Copa del Mundo 2026, resultados en vivo, clasificación grupos, octavos de final, eliminatorias, fixture, calendario mundial, fútbol">
+  <meta name="theme-color" content="#0a0f1e">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Mundial 2026 - Resultados en Vivo y Clasificación">
+  <meta property="og:description" content="Sigue en tiempo real los resultados, estadísticas y la clasificación de la Copa del Mundo de la FIFA 2026.">
+  <meta property="og:image" content="mundial_logo.png">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Mundial 2026 - Resultados en Vivo y Clasificación">
+  <meta name="twitter:description" content="Sigue en tiempo real los resultados, estadísticas y la clasificación de la Copa del Mundo de la FIFA 2026.">
+  <meta name="twitter:image" content="mundial_logo.png">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <div class="app-layout">
+    <!-- Sidebar Backdrop (Mobile only) -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Sidebar Component -->
+    <aside class="app-sidebar" id="app-sidebar">
+      <div class="sidebar-header">
+        <div class="logo-container">
+          <img src="mundial_logo.png" alt="FIFA 26 Logo" class="logo-img">
+          <h2>Mundial 2026</h2>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-muted);">¡Vive el Mundial!</p>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="index.html" class="sidebar-link active" id="nav-live">
+          <span class="nav-icon">📡</span>
+          <span>Resultados en Vivo</span>
+        </a>
+        <a href="predecir.html" class="sidebar-link" id="nav-predict">
+          <span class="nav-icon">✍️</span>
+          <span>Predicciones</span>
+        </a>
+        <a href="simulador.html" class="sidebar-link" id="nav-sim">
+          <span class="nav-icon">⚡</span>
+          <span>Simulador</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <p>© Alessandro Tejero</p>
+        <p style="margin-top: 0.25rem; font-size: 0.7rem; opacity: 0.6;">Copa del Mundo 2026</p>
+      </div>
+    </aside>
+
+    <!-- Main Content Container -->
+    <div class="main-content">
+      <!-- Header Top -->
+      <header class="header-top" style="justify-content: center;">
+        <div style="display: flex; align-items: center; justify-content: center; width: 100%; position: relative;">
+          <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Abrir menú"
+            style="position: absolute; left: 0;">☰</button>
+          <div class="header-info"
+            style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+            <h1>Mundial 2026</h1>
+            <span id="current-datetime"
+              style="color: var(--accent-cyan); font-weight: 500; font-variant-numeric: tabular-nums; margin-top: 0.25rem;"></span>
+          </div>
+        </div>
+      </header>
+
+      <main style="padding: 2rem;">
+        <!-- Live info banner -->
+        <section class="info-banner">
+          <div class="sim-info">
+            <span class="info-title">📡 Marcadores en Vivo</span>
+            <span class="info-desc">Consulta los resultados oficiales del torneo actualizados al minuto. Pasa el cursor
+              sobre un equipo en el cuadro final para destacar su camino. Haz clic en la ciudad sede para ver detalles
+              del estadio.</span>
+          </div>
+        </section>
+
+        <!-- Upcoming Matches Section -->
+        <section id="upcoming-section" class="upcoming-section">
+          <h2 class="section-title-upcoming">
+            <span class="upcoming-icon">📅</span> Próximos Partidos
+          </h2>
+          <div class="upcoming-matches-grid" id="upcoming-container">
+            <!-- Rendered dynamically by live.js -->
+          </div>
+        </section>
+
+        <!-- Toggle buttons for views -->
+        <div class="view-tabs">
+          <button id="btn-show-groups" class="btn btn-accent">Ver Fase de Grupos</button>
+          <button id="btn-show-bracket" class="btn">Ver Eliminatorias</button>
+        </div>
+
+        <!-- Groups Section -->
+        <section id="groups-section">
+          <h2 style="text-align: center; margin-bottom: 1.5rem; color: var(--accent-gold); letter-spacing: 1px;">Tablas
+            de Clasificación y Resultados Oficiales</h2>
+          <div class="groups-grid" id="groups-container">
+            <!-- Rendered dynamically by live.js -->
+          </div>
+
+          <!-- Best Third Places Standings -->
+          <div id="thirds-container">
+            <!-- Rendered dynamically by live.js -->
+          </div>
+        </section>
+
+        <!-- Bracket Section -->
+        <section id="bracket-section" style="display: none;">
+          <h2 style="text-align: center; margin-bottom: 1.5rem; color: var(--accent-gold); letter-spacing: 1px;">Árbol
+            de Eliminatorias Oficial</h2>
+
+          <!-- Champion Section (rendered dynamically) -->
+          <div id="champion-container"></div>
+
+          <div class="bracket-wrapper" id="bracket-scroll-container">
+            <div class="bracket-container" id="bracket-container">
+              <!-- Rendered dynamically by live.js -->
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- Stadium Details Modal -->
+  <div id="stadium-modal" class="stadium-modal" onclick="closeStadiumModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <button class="close-modal" onclick="closeStadiumModal()">&times;</button>
+      <h3 id="modal-stadium-title">Estadio</h3>
+      <div id="modal-stadium-details" style="margin-top: 1rem; line-height: 1.6; color: var(--text-secondary);">
+        <!-- Populated dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Database & Logic Script -->
+  <script src="data.js"></script>
+  <script src="live.js"></script>
+
+</body>
+
+</html>

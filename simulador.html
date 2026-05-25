@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador Mundial 2026 - Simulación Estadística FIFA</title>
+  <meta name="description"
+    content="Simula de forma automática y probabilística el transcurso del Mundial 2026 usando los ratings oficiales de fuerza de la FIFA. ¡Descubre quién tiene más probabilidad de campeonar!">
+  <meta name="keywords" content="simulador mundial 2026, simular mundial, simulación copa del mundo, probabilidades fifa, simular grupos futbol, rating fifa mundial, simulador bracket mundial">
+  <meta name="theme-color" content="#0a0f1e">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Simulador Mundial 2026 - Simulación Estadística FIFA">
+  <meta property="og:description" content="Simula de forma automática y probabilística el transcurso del Mundial 2026 usando los ratings oficiales de fuerza de la FIFA.">
+  <meta property="og:image" content="mundial_logo.png">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Simulador Mundial 2026 - Simulación Estadística FIFA">
+  <meta name="twitter:description" content="Simula de forma automática y probabilística el transcurso del Mundial 2026 usando los ratings oficiales de fuerza de la FIFA.">
+  <meta name="twitter:image" content="mundial_logo.png">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <div class="app-layout">
+    <!-- Sidebar Backdrop (Mobile only) -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Sidebar Component -->
+    <aside class="app-sidebar" id="app-sidebar">
+      <div class="sidebar-header">
+        <div class="logo-container">
+          <img src="mundial_logo.png" alt="FIFA 26 Logo" class="logo-img">
+          <h2>Mundial 2026</h2>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-muted);">¡Vive el Mundial!</p>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="index.html" class="sidebar-link" id="nav-live">
+          <span class="nav-icon">📡</span>
+          <span>Resultados en Vivo</span>
+        </a>
+        <a href="predecir.html" class="sidebar-link" id="nav-predict">
+          <span class="nav-icon">✍️</span>
+          <span>Predicciones</span>
+        </a>
+        <a href="simulador.html" class="sidebar-link active" id="nav-sim">
+          <span class="nav-icon">⚡</span>
+          <span>Simulador</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <p>© Alessandro Tejero</p>
+        <p style="margin-top: 0.25rem; font-size: 0.7rem; opacity: 0.6;">Copa del Mundo 2026</p>
+      </div>
+    </aside>
+
+    <!-- Main Content Container -->
+    <div class="main-content">
+      <!-- Header Top -->
+      <header class="header-top" style="justify-content: center;">
+        <div style="display: flex; align-items: center; justify-content: center; width: 100%; position: relative;">
+          <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Abrir menú" style="position: absolute; left: 0;">☰</button>
+          <div class="header-info" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+            <h1>Simulador Mundial 2026</h1>
+            <p class="subtitle">Simulador Automático (Basado en Ratings FIFA)</p>
+          </div>
+        </div>
+      </header>
+
+      <main style="padding: 2rem;">
+        <!-- Controls Panel -->
+        <div class="controls-container" style="margin-top: 0; max-width: none; margin-bottom: 2rem; justify-content: center;">
+          <div class="prediction-stats" style="gap: 1rem; margin-right: 1rem;">
+            <div class="stat-item">
+              <span class="stat-dot" id="sim-group-dot"></span>
+              <span>Grupos: <strong id="sim-group-text">Pendiente</strong></span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-dot" id="sim-ko-dot"></span>
+              <span>Eliminatorias: <strong id="sim-ko-text">Pendiente</strong></span>
+            </div>
+          </div>
+
+          <div class="actions-group">
+            <button id="btn-sim-groups" class="btn" title="Simular la fase de grupos">
+              📊 Simular Grupos
+            </button>
+            <button id="btn-sim-ko" class="btn" title="Simular las eliminatorias de los grupos actuales">
+              🏆 Simular Eliminatorias
+            </button>
+            <button id="btn-sim-all" class="btn btn-primary" title="Simular todo el torneo completo de una vez">
+              ⚡ Simular Todo
+            </button>
+            <button id="btn-reset-sim" class="btn btn-reset" title="Restablecer simulación">
+              🔄 Reiniciar
+            </button>
+          </div>
+        </div>
+        <!-- Quick simulator info -->
+        <section class="info-banner">
+          <div class="sim-info">
+            <span class="info-title">⚡ Simulación Estadística Inteligente</span>
+            <span class="info-desc">Los partidos se simulan usando un modelo probabilístico sesgado por los ratings de
+              fuerza de cada selección (definidos en la base de datos). Los empates en eliminatorias se resuelven
+              mediante prórroga/penaltis automáticos.</span>
+          </div>
+        </section>
+
+        <!-- Champion Section (rendered dynamically) -->
+        <div id="champion-container"></div>
+
+        <!-- Toggle buttons for views in Simulator -->
+        <div class="view-tabs">
+          <button id="btn-show-groups" class="btn btn-accent">Ver Fase de Grupos</button>
+          <button id="btn-show-bracket" class="btn">Ver Eliminatorias</button>
+        </div>
+
+        <!-- Groups Section -->
+        <section id="groups-section">
+          <h2 style="text-align: center; margin-bottom: 1.5rem; color: var(--accent-gold); letter-spacing: 1px;">Tablas
+            de Clasificación y Resultados</h2>
+          <div class="groups-grid" id="groups-container">
+            <!-- Rendered dynamically by simulador.js -->
+          </div>
+
+          <!-- Best Third Places Standings -->
+          <div id="thirds-container">
+            <!-- Rendered dynamically by simulador.js -->
+          </div>
+        </section>
+
+        <!-- Bracket Section -->
+        <section id="bracket-section" style="display: none;">
+          <h2 style="text-align: center; margin-bottom: 1.5rem; color: var(--accent-gold); letter-spacing: 1px;">Árbol
+            de Eliminatorias (Simulado)</h2>
+          <div class="bracket-wrapper" id="bracket-scroll-container">
+            <div class="bracket-container" id="bracket-container">
+              <!-- Rendered dynamically by simulador.js -->
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- Stadium Details Modal -->
+  <div id="stadium-modal" class="stadium-modal" onclick="closeStadiumModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <button class="close-modal" onclick="closeStadiumModal()">&times;</button>
+      <h3 id="modal-stadium-title">Estadio</h3>
+      <div id="modal-stadium-details" style="margin-top: 1rem; line-height: 1.6; color: var(--text-secondary);">
+        <!-- Populated dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Database & Logic Script -->
+  <script src="data.js"></script>
+  <script src="simulador.js"></script>
+
+</body>
+
+</html>

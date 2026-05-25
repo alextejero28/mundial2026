@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Predictor Mundial 2026 - Crea tus Predicciones</title>
+  <meta name="description"
+    content="Crea y comparte tus predicciones de la Copa del Mundo de la FIFA 2026. Elige los clasificados de la fase de grupos, los mejores terceros y simula el bracket de eliminatorias.">
+  <meta name="keywords" content="predictor mundial 2026, pronósticos mundial 2026, simular grupos, clasificar terceros, bracket mundial, copa del mundo 2026, simulador de eliminatorias, fixture interactivo">
+  <meta name="theme-color" content="#0a0f1e">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Predictor Mundial 2026 - Crea tus Predicciones">
+  <meta property="og:description" content="Crea y comparte tus predicciones de la Copa del Mundo de la FIFA 2026. Predice la fase de grupos y el cuadro de eliminatorias.">
+  <meta property="og:image" content="mundial_logo.png">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Predictor Mundial 2026 - Crea tus Predicciones">
+  <meta name="twitter:description" content="Crea y comparte tus predicciones de la Copa del Mundo de la FIFA 2026. Predice la fase de grupos y el cuadro de eliminatorias.">
+  <meta name="twitter:image" content="mundial_logo.png">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <div class="app-layout">
+    <!-- Sidebar Backdrop (Mobile only) -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Sidebar Component -->
+    <aside class="app-sidebar" id="app-sidebar">
+      <div class="sidebar-header">
+        <div class="logo-container">
+          <img src="mundial_logo.png" alt="FIFA 26 Logo" class="logo-img">
+          <h2>Mundial 2026</h2>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-muted);">¡Vive el Mundial!</p>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="index.html" class="sidebar-link" id="nav-live">
+          <span class="nav-icon">📡</span>
+          <span>Resultados en Vivo</span>
+        </a>
+        <a href="predecir.html" class="sidebar-link active" id="nav-predict">
+          <span class="nav-icon">✍️</span>
+          <span>Predicciones</span>
+        </a>
+        <a href="simulador.html" class="sidebar-link" id="nav-sim">
+          <span class="nav-icon">⚡</span>
+          <span>Simulador</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <p>© Alessandro Tejero</p>
+        <p style="margin-top: 0.25rem; font-size: 0.7rem; opacity: 0.6;">Copa del Mundo 2026</p>
+      </div>
+    </aside>
+
+    <!-- Main Content Container -->
+    <div class="main-content">
+      <!-- Header Top -->
+      <header class="header-top" style="justify-content: center;">
+        <div style="display: flex; align-items: center; justify-content: center; width: 100%; position: relative;">
+          <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Abrir menú" style="position: absolute; left: 0;">☰</button>
+          <div class="header-info" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+            <h1>Predictor Mundial 2026</h1>
+            <p class="subtitle">Predicciones del Torneo</p>
+          </div>
+        </div>
+      </header>
+
+      <main style="padding: 2rem;">
+        <!-- Stats Dashboard & Page Controls -->
+        <div class="controls-container" style="margin-top: 0; max-width: none; margin-bottom: 2rem; justify-content: center;">
+          <div class="prediction-stats" style="gap: 1rem; margin-right: 1rem;">
+            <div class="stat-item">
+              <span class="stat-dot" id="stat-group-dot"></span>
+              <span>Terceros: <strong id="stat-group-text">0/8 seleccionados</strong></span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-dot" id="stat-ko-dot"></span>
+              <span>Eliminatorias: <strong id="stat-ko-text">0/32 ganadores</strong></span>
+            </div>
+          </div>
+
+          <div class="actions-group">
+            <button id="btn-reset-all" class="btn btn-reset" title="Restablecer toda la predicción" disabled>
+              🔄 Reiniciar Predicción
+            </button>
+          </div>
+        </div>
+
+        <!-- Toggle buttons for views in Predictor (Hidden for sequential flow) -->
+        <div class="view-tabs" style="display: none; margin-bottom: 1.5rem;">
+          <button id="btn-show-groups" class="btn btn-accent">Predecir Grupos</button>
+          <button id="btn-show-bracket" class="btn">Predecir Bracket</button>
+        </div>
+
+        <!-- Groups Section -->
+        <section id="groups-section">
+          <!-- Quick manual guide -->
+          <section class="info-banner" style="margin-bottom: 2rem;">
+            <div class="sim-info">
+              <span class="info-title">✍️ Predicción de Grupos</span>
+              <span class="info-desc">Haz clic en los equipos de cada grupo para clasificarlos en orden (<b>1º</b>,
+                <b>2º</b> y <b>3º</b>). Para deseleccionar un equipo, haz clic en él de nuevo. Cuando todos los grupos
+                estén listos, elige los <b>8 mejores terceros</b> abajo y avanza al bracket.</span>
+            </div>
+          </section>
+
+          <h2 style="text-align: center; margin-bottom: 1.5rem; color: var(--accent-gold); letter-spacing: 1px;">Fase de
+            Grupos</h2>
+          <div class="groups-grid" id="groups-container">
+            <!-- Rendered dynamically by predecir.js -->
+          </div>
+
+          <!-- Best Third Places Standings -->
+          <div id="thirds-container">
+            <!-- Rendered dynamically by predecir.js -->
+          </div>
+
+          <!-- Next Step Button -->
+          <div class="next-step-container" style="text-align: center; margin-top: 3rem;">
+            <button id="btn-next-step" class="btn btn-primary"
+              style="font-size: 1.1rem; padding: 0.8rem 2.5rem; border-radius: 50px; cursor: pointer; transition: var(--transition-smooth);"
+              disabled>
+              Siguiente: Predicciones del Bracket ➔
+            </button>
+          </div>
+        </section>
+
+        <!-- Bracket Section -->
+        <section id="bracket-section" style="display: none;">
+          <!-- Back button -->
+          <button id="btn-back-to-groups" class="btn"
+            style="margin-bottom: 1.5rem; font-size: 0.9rem; padding: 0.5rem 1.2rem; border-radius: 30px;">
+            ⬅ Volver a Grupos y Terceros
+          </button>
+
+          <!-- Quick manual guide -->
+          <section class="info-banner" style="margin-bottom: 2rem;">
+            <div class="sim-info">
+              <span class="info-title">🏆 Predicción de Eliminatorias (Arrastrar para Avanzar)</span>
+              <span class="info-desc">Arrastra la fila de un equipo al siguiente cruce de eliminatorias (o haz clic en
+                él) para avanzar al ganador. El camino de cada equipo clasificado se iluminará automáticamente.</span>
+            </div>
+          </section>
+
+          <h2 style="text-align: center; margin-bottom: 1.5rem; color: var(--accent-gold); letter-spacing: 1px;">Árbol
+            de Eliminatorias</h2>
+
+          <!-- Champion Section (rendered dynamically) -->
+          <div id="champion-container"></div>
+
+          <!-- Bracket Wrapper -->
+          <div class="bracket-wrapper" id="bracket-scroll-container">
+            <div class="bracket-container" id="bracket-container">
+              <!-- Rendered dynamically by predecir.js -->
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- Stadium Details Modal -->
+  <div id="stadium-modal" class="stadium-modal" onclick="closeStadiumModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <button class="close-modal" onclick="closeStadiumModal()">&times;</button>
+      <h3 id="modal-stadium-title">Estadio</h3>
+      <div id="modal-stadium-details" style="margin-top: 1rem; line-height: 1.6; color: var(--text-secondary);">
+        <!-- Populated dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Database & Logic Script -->
+  <script src="data.js"></script>
+  <script src="predecir.js"></script>
+
+</body>
+
+</html>
