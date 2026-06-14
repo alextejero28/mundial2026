@@ -18,6 +18,11 @@ document.addEventListener('DOMContentLoaded', () => {
   setupSidebar();
   setupViewTabs();
   initApiLoading();
+
+  // Set up auto-refresh interval every 30 seconds
+  setInterval(() => {
+    initApiLoading(true);
+  }, 30000);
 });
 
 function setupSidebar() {
@@ -434,13 +439,14 @@ function renderGroupStage() {
       const clickableClass = hasScore ? ' clickable-match-item' : '';
       const clickAttr = hasScore ? `onclick="showMatchDetails(${m.id})"` : '';
       const liveBadgeHTML = isLive ? `<span class="match-live-badge-dot" title="Partido en vivo"></span> ` : '';
+      const liveTimeLabel = isLive ? `<span class="live-time-text">${formatTimeElapsed(m.timeElapsed)}</span>` : `${m.date} - ${m.time}`;
       
       fixturesHTML += `
         <div class="match-item${liveClass}${clickableClass}" ${clickAttr}>
           <div class="match-info-meta">
             <span style="display: flex; align-items: center; gap: 0.35rem;">
               ${liveBadgeHTML}
-              ${m.date} - ${m.time}
+              ${liveTimeLabel}
             </span>
             <span class="match-stadium" title="${m.stadium}, ${m.city}" onclick="${hasScore ? 'event.stopPropagation(); ' : ''}showStadiumDetails('${m.stadium.replace(/'/g, "\\'")}', '${m.city.replace(/'/g, "\\'")}')" style="cursor: help;">${m.city}</span>
           </div>
@@ -587,12 +593,13 @@ function renderBracket() {
       let labelText = m.label;
       const isLive = isMatchLive(m);
       const liveBadgeHTML = isLive ? `<span class="bracket-live-dot" title="En Vivo"></span> ` : '';
+      const liveTimeLabel = isLive ? `<span class="live-time-text" style="color: #ef4444; font-weight: 700; font-size: 0.75rem;">${formatTimeElapsed(m.timeElapsed)}</span>` : labelText;
       
       let headerHTML = `
         <div class="bracket-match-header">
           <span style="display: flex; align-items: center; gap: 0.25rem;">
             ${liveBadgeHTML}
-            ${labelText}
+            ${liveTimeLabel}
           </span>
           <span class="match-stadium" title="${m.stadium}, ${m.city}" onclick="event.stopPropagation(); showStadiumDetails('${m.stadium.replace(/'/g, "\\'")}', '${m.city.replace(/'/g, "\\'")}')" style="cursor: help;">${m.city}</span>
         </div>
@@ -935,13 +942,7 @@ function renderUpcomingMatches() {
       ? `<img class="match-flag" src="https://flagcdn.com/w40/${t2Flag}.png" alt="${t2Name}">`
       : `<div class="match-flag-placeholder">TBD</div>`;
 
-    const matchDate = getMatchDate(m);
-    const nowLocal = getLocalCurrentDate();
-    let isLive = false;
-    if (matchDate) {
-      const timeDiffMs = nowLocal - matchDate;
-      isLive = m.g1 !== null && m.g2 !== null && timeDiffMs >= 0 && timeDiffMs <= 2.5 * 60 * 60 * 1000;
-    }
+    const isLive = isMatchLive(m);
 
     const hasScore = m.g1 !== null && m.g2 !== null;
     const card = document.createElement('div');
@@ -956,7 +957,7 @@ function renderUpcomingMatches() {
 
     let liveBadgeHTML = '';
     if (isLive) {
-      liveBadgeHTML = `<span class="upcoming-live-badge"><span class="live-dot"></span> EN VIVO</span>`;
+      liveBadgeHTML = `<span class="upcoming-live-badge"><span class="live-dot"></span> ${formatTimeElapsed(m.timeElapsed)}</span>`;
     }
 
     card.innerHTML = `
@@ -1164,7 +1165,19 @@ function findMatchById(matchId) {
   return { match: null };
 }
 
+function formatTimeElapsed(val) {
+  if (!val) return 'En Vivo';
+  const valLower = val.toLowerCase().trim();
+  if (valLower === 'ht' || valLower === 'half-time' || valLower === 'halftime') return 'Descanso';
+  if (valLower === 'ft' || valLower === 'full-time' || valLower === 'finished') return 'Finalizado';
+  if (/^\d+$/.test(val)) return `${val}'`;
+  return val;
+}
+
 function isMatchLive(m) {
+  if (m && m.isLive !== undefined) {
+    return m.isLive;
+  }
   const matchDate = getMatchDate(m);
   if (!matchDate) return false;
   const nowLocal = getLocalCurrentDate();
@@ -1217,14 +1230,14 @@ function showMatchDetails(matchId) {
 
   let liveBadgeHTML = '';
   if (isLive) {
-    liveBadgeHTML = `<span class="upcoming-live-badge"><span class="live-dot"></span> EN VIVO</span>`;
+    liveBadgeHTML = `<span class="upcoming-live-badge"><span class="live-dot"></span> ${formatTimeElapsed(m.timeElapsed)}</span>`;
   }
 
   header.innerHTML = `
     <span class="upcoming-stage-badge">${stageLabel}</span>
     <div style="display: flex; align-items: center; gap: 0.5rem;">
       ${liveBadgeHTML}
-      <span>${m.date} - ${m.time}</span>
+      <span>${isLive ? '' : `${m.date} - `}${m.time}</span>
     </div>
   `;
 
@@ -1406,10 +1419,7 @@ function clearScores() {
 const DEFAULT_API_URL = 'https://worldcup26.ir/get/games';
 
 // Fetch and load live scores silently in the background
-async function initApiLoading() {
-  // Clear the simulated scores immediately
-  clearScores();
-
+async function initApiLoading(isAutoRefresh = false) {
   let url = localStorage.getItem('worldcup_api_url');
   if (url === 'https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json' || url === 'live_scores_sample.json') {
     localStorage.removeItem('worldcup_api_url');
@@ -1419,32 +1429,52 @@ async function initApiLoading() {
     url = DEFAULT_API_URL;
   }
 
-  // 1. Try to load from localStorage cache first (Stale-While-Revalidate)
   const cacheKey = `cached_scores_${url}`;
-  const cachedData = localStorage.getItem(cacheKey);
-  if (cachedData) {
-    try {
-      const data = JSON.parse(cachedData);
-      applyLiveScores(data);
-    } catch (e) {
-      console.warn('Failed to parse cached scores', e);
-    }
-  }
 
-  // Render immediately with cached (or cleared) data so the page displays instantly
-  renderAll();
+  if (!isAutoRefresh) {
+    // Clear the simulated scores immediately
+    clearScores();
+
+    // 1. Try to load from localStorage cache first (Stale-While-Revalidate)
+    const cachedData = localStorage.getItem(cacheKey);
+    if (cachedData) {
+      try {
+        const data = JSON.parse(cachedData);
+        applyLiveScores(data);
+      } catch (e) {
+        console.warn('Failed to parse cached scores', e);
+      }
+    }
+
+    // Render immediately with cached (or cleared) data so the page displays instantly
+    renderAll();
+  }
 
   // 2. Fetch fresh data in the background with a 5-second timeout
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-    const response = await fetch(url, { signal: controller.signal });
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    let response;
+    try {
+      response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+    } catch (directError) {
+      clearTimeout(timeoutId);
+      console.warn('Direct fetch failed. Retrying via CORS proxy...', directError);
+      const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
+      const proxyController = new AbortController();
+      const proxyTimeoutId = setTimeout(() => proxyController.abort(), 5000);
+      response = await fetch(proxyUrl, { signal: proxyController.signal });
+      clearTimeout(proxyTimeoutId);
+      if (!response.ok) {
+        throw new Error(`Proxy HTTP error! status: ${response.status}`);
+      }
     }
+
     const data = await response.json();
     
     // Save to cache
@@ -1467,9 +1497,15 @@ function applyLiveScores(data) {
   // Format C: worldcup26.ir matches list: { games: [...] }
   if (data.games && Array.isArray(data.games)) {
     // Reset scores first so we don't mix old simulation with the new API data
-    WORLD_CUP_DATA.groupMatches.forEach(m => { m.g1 = null; m.g2 = null; m.goals1 = null; m.goals2 = null; m.goals = null; });
+    WORLD_CUP_DATA.groupMatches.forEach(m => { 
+      m.g1 = null; m.g2 = null; m.goals1 = null; m.goals2 = null; m.goals = null; 
+      m.isLive = false; m.isFinished = false; m.timeElapsed = null;
+    });
     for (const stage of Object.keys(WORLD_CUP_DATA.knockoutMatches)) {
-      WORLD_CUP_DATA.knockoutMatches[stage].forEach(m => { m.g1 = null; m.g2 = null; m.penaltyWinnerId = null; m.goals1 = null; m.goals2 = null; m.goals = null; });
+      WORLD_CUP_DATA.knockoutMatches[stage].forEach(m => { 
+        m.g1 = null; m.g2 = null; m.penaltyWinnerId = null; m.goals1 = null; m.goals2 = null; m.goals = null; 
+        m.isLive = false; m.isFinished = false; m.timeElapsed = null;
+      });
     }
 
     // Helper to parse scorers string to { name, min } array
@@ -1555,6 +1591,9 @@ function applyLiveScores(data) {
             groupMatch.g2 = isT1Home ? awayScore : homeScore;
             groupMatch.goals1 = isT1Home ? parseWorldCup26Scorers(g.home_scorers) : parseWorldCup26Scorers(g.away_scorers);
             groupMatch.goals2 = isT1Home ? parseWorldCup26Scorers(g.away_scorers) : parseWorldCup26Scorers(g.home_scorers);
+            groupMatch.isLive = isLive;
+            groupMatch.isFinished = isFinished;
+            groupMatch.timeElapsed = g.time_elapsed;
             parsedAny = true;
           }
         }
@@ -1601,6 +1640,9 @@ function applyLiveScores(data) {
         lm.g2 = isT1Home ? awayScore : homeScore;
         lm.goals1 = isT1Home ? parseWorldCup26Scorers(g.home_scorers) : parseWorldCup26Scorers(g.away_scorers);
         lm.goals2 = isT1Home ? parseWorldCup26Scorers(g.away_scorers) : parseWorldCup26Scorers(g.home_scorers);
+        lm.isLive = isLive;
+        lm.isFinished = isFinished;
+        lm.timeElapsed = g.time_elapsed;
 
         // If it's a draw and finished, we need a penalty winner
         if (lm.g1 === lm.g2 && isFinished) {
