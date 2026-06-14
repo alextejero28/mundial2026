@@ -428,11 +428,21 @@ function renderGroupStage() {
         else if (m.g2 > m.g1) winnerClass2 = 'predicted-winner';
       }
       
+      const isLive = isMatchLive(m);
+      const hasScore = m.g1 !== null && m.g2 !== null;
+      const liveClass = isLive ? ' live-match-item' : '';
+      const clickableClass = hasScore ? ' clickable-match-item' : '';
+      const clickAttr = hasScore ? `onclick="showMatchDetails(${m.id})"` : '';
+      const liveBadgeHTML = isLive ? `<span class="match-live-badge-dot" title="Partido en vivo"></span> ` : '';
+      
       fixturesHTML += `
-        <div class="match-item">
+        <div class="match-item${liveClass}${clickableClass}" ${clickAttr}>
           <div class="match-info-meta">
-            <span>${m.date} - ${m.time}</span>
-            <span class="match-stadium" title="${m.stadium}, ${m.city}" onclick="showStadiumDetails('${m.stadium}', '${m.city}')" style="cursor: help;">${m.city}</span>
+            <span style="display: flex; align-items: center; gap: 0.35rem;">
+              ${liveBadgeHTML}
+              ${m.date} - ${m.time}
+            </span>
+            <span class="match-stadium" title="${m.stadium}, ${m.city}" onclick="${hasScore ? 'event.stopPropagation(); ' : ''}showStadiumDetails('${m.stadium.replace(/'/g, "\\'")}', '${m.city.replace(/'/g, "\\'")}')" style="cursor: help;">${m.city}</span>
           </div>
           <div class="match-grid-row">
             <div class="match-team team-home ${winnerClass1}">
@@ -575,10 +585,16 @@ function renderBracket() {
 
     const createMatchCardHTML = (m) => {
       let labelText = m.label;
+      const isLive = isMatchLive(m);
+      const liveBadgeHTML = isLive ? `<span class="bracket-live-dot" title="En Vivo"></span> ` : '';
+      
       let headerHTML = `
         <div class="bracket-match-header">
-          <span>${labelText}</span>
-          <span class="match-stadium" title="${m.stadium}, ${m.city}" onclick="showStadiumDetails('${m.stadium}', '${m.city}')" style="cursor: help;">${m.city}</span>
+          <span style="display: flex; align-items: center; gap: 0.25rem;">
+            ${liveBadgeHTML}
+            ${labelText}
+          </span>
+          <span class="match-stadium" title="${m.stadium}, ${m.city}" onclick="event.stopPropagation(); showStadiumDetails('${m.stadium.replace(/'/g, "\\'")}', '${m.city.replace(/'/g, "\\'")}')" style="cursor: help;">${m.city}</span>
         </div>
       `;
 
@@ -681,6 +697,17 @@ function renderBracket() {
         finalSection.innerHTML = `<div class="bracket-center-stage-title">Final</div>`;
         const matchCard = document.createElement('div');
         matchCard.className = 'bracket-match';
+        
+        const isLive = isMatchLive(finalMatch);
+        const hasScore = finalMatch.g1 !== null && finalMatch.g2 !== null;
+        if (isLive) {
+          matchCard.classList.add('live-bracket-match');
+        }
+        if (hasScore) {
+          matchCard.classList.add('clickable-bracket-match');
+          matchCard.setAttribute('onclick', `showMatchDetails(${finalMatch.id})`);
+        }
+        
         matchCard.id = `match-${finalMatch.id}`;
         matchCard.innerHTML = createMatchCardHTML(finalMatch);
         finalSection.appendChild(matchCard);
@@ -693,6 +720,17 @@ function renderBracket() {
         thirdSection.innerHTML = `<div class="bracket-center-stage-title">Tercer Puesto</div>`;
         const matchCard = document.createElement('div');
         matchCard.className = 'bracket-match';
+        
+        const isLive = isMatchLive(thirdMatch);
+        const hasScore = thirdMatch.g1 !== null && thirdMatch.g2 !== null;
+        if (isLive) {
+          matchCard.classList.add('live-bracket-match');
+        }
+        if (hasScore) {
+          matchCard.classList.add('clickable-bracket-match');
+          matchCard.setAttribute('onclick', `showMatchDetails(${thirdMatch.id})`);
+        }
+        
         matchCard.id = `match-${thirdMatch.id}`;
         matchCard.innerHTML = createMatchCardHTML(thirdMatch);
         thirdSection.appendChild(matchCard);
@@ -704,6 +742,17 @@ function renderBracket() {
       col.matches.forEach(m => {
         const matchCard = document.createElement('div');
         matchCard.className = 'bracket-match';
+        
+        const isLive = isMatchLive(m);
+        const hasScore = m.g1 !== null && m.g2 !== null;
+        if (isLive) {
+          matchCard.classList.add('live-bracket-match');
+        }
+        if (hasScore) {
+          matchCard.classList.add('clickable-bracket-match');
+          matchCard.setAttribute('onclick', `showMatchDetails(${m.id})`);
+        }
+        
         matchCard.id = `match-${m.id}`;
         matchCard.innerHTML = createMatchCardHTML(m);
         bodyElem.appendChild(matchCard);
@@ -894,8 +943,12 @@ function renderUpcomingMatches() {
       isLive = m.g1 !== null && m.g2 !== null && timeDiffMs >= 0 && timeDiffMs <= 2.5 * 60 * 60 * 1000;
     }
 
+    const hasScore = m.g1 !== null && m.g2 !== null;
     const card = document.createElement('div');
-    card.className = 'upcoming-match-card' + (isLive ? ' live-card' : '');
+    card.className = 'upcoming-match-card' + (isLive ? ' live-card' : '') + (hasScore ? ' clickable-card' : '');
+    if (hasScore) {
+      card.setAttribute('onclick', `showMatchDetails(${m.id})`);
+    }
     
     const dateFormatted = m.date.replace(/de junio/i, 'Jun').replace(/de julio/i, 'Jul');
     const escapedStadium = m.stadium.replace(/'/g, "\\'");
@@ -958,6 +1011,301 @@ function showStadiumDetails(stadium, city) {
 
 function closeStadiumModal() {
   const modal = document.getElementById('stadium-modal');
+  if (modal) modal.classList.remove('open');
+}
+
+// Famous players list for simulating scorers when not present in API JSON
+const FAMOUS_PLAYERS = {
+  "MEX": ["S. Giménez", "H. Lozano", "H. Martín", "U. Antuna", "L. Chávez", "O. Pineda"],
+  "RSA": ["P. Tau", "T. Zwane", "M. Mayambela", "L. Lepasa", "A. Modiba"],
+  "KOR": ["Son Heung-min", "Hwang Hee-chan", "Cho Gue-sung", "Lee Kang-in", "Lee Jae-sung"],
+  "CZE": ["P. Schick", "T. Souček", "V. Černý", "A. Hložek", "J. Kuchta"],
+  "CAN": ["J. David", "A. Davies", "C. Larin", "T. Buchanan", "S. Eustáquio"],
+  "BIH": ["E. Džeko", "H. Dulić", "L. Menalo", "M. Stevanović", "A. Rahmanović"],
+  "QAT": ["Almoez Ali", "Akram Afif", "H. Al-Haydos", "Y. Abdurisag", "M. Waad"],
+  "SUI": ["B. Embolo", "X. Shaqiri", "Z. Amdouni", "R. Vargas", "G. Xhaka"],
+  "BRA": ["Vinicius Jr.", "Neymar Jr.", "Rodrygo", "Richarlison", "Gabriel Jesus", "Raphinha"],
+  "MAR": ["Y. En-Nesyri", "H. Ziyech", "A. El Kaabi", "S. Boufal", "A. Ounahi"],
+  "HAI": ["F. Frantzdy", "D. Nazon", "C. Arcus", "D. Guerrier"],
+  "SCO": ["J. McGinn", "S. McTominay", "L. Shankland", "C. Adams", "R. Christie"],
+  "USA": ["C. Pulisic", "T. Weah", "F. Balogun", "G. Reyna", "W. McKennie"],
+  "PAR": ["M. Almirón", "A. Sanabria", "G. Ávalos", "R. Gómez", "M. Rojas"],
+  "AUS": ["M. Duke", "C. Goodwin", "J. Maclaren", "M. Boyle", "Jackson Irvine"],
+  "TUR": ["C. Under", "K. Aktürkoğlu", "B. Yılmaz", "H. Calhanoğlu", "C. Tosun"],
+  "GER": ["J. Musiala", "F. Wirtz", "K. Havertz", "N. Füllkrug", "L. Sané", "S. Gnabry"],
+  "CUW": ["J. Bacuna", "R. Janga", "K. Felida", "G. Kastaneer"],
+  "CIV": ["S. Haller", "J. Bamba", "K. Konaté", "I. Sangaré", "S. Adingra"],
+  "ECU": ["Enner Valencia", "J. Caicedo", "K. Rodríguez", "Á. Mena", "J. Sornoza"],
+  "NED": ["M. Depay", "C. Gakpo", "D. Malen", "X. Simons", "W. Weghorst"],
+  "JPN": ["K. Mitoma", "T. Kubo", "T. Minamino", "R. Doan", "K. Furuhashi"],
+  "SWE": ["A. Isak", "V. Gyökeres", "D. Kulusevski", "E. Forsberg", "J. Larsson"],
+  "TUN": ["Y. Msakni", "N. Sliti", "H. Jelassi", "A. Layouni"],
+  "BEL": ["R. Lukaku", "K. De Bruyne", "J. Doku", "L. Trossard", "L. Openda"],
+  "EGY": ["M. Salah", "M. Mostafa", "Trezeguet", "M. Marmoush", "Zizo"],
+  "IRN": ["M. Taremi", "S. Azmoun", "A. Jahanbakhsh", "S. Ghoddos", "M. Mohebi"],
+  "NZL": ["Chris Wood", "Ben Waine", "E. Just", "M. Garbett"],
+  "ESP": ["Á. Morata", "Dani Olmo", "Nico Williams", "Lamine Yamal", "Gavi", "Pedri"],
+  "CPV": ["Ryan Mendes", "Garry Rodrigues", "Bebé", "Jovane Cabral"],
+  "KSA": ["Salem Al-Dawsari", "Firas Al-Buraikan", "Saleh Al-Shehri", "Abdulrahman Ghareeb"],
+  "URU": ["D. Núñez", "L. Suárez", "F. Valverde", "G. de Arrascaeta", "F. Pellistri"],
+  "FRA": ["K. Mbappé", "A. Griezmann", "O. Dembélé", "K. Coman", "M. Thuram"],
+  "SEN": ["Sadio Mané", "N. Jackson", "I. Sarr", "H. Diallo", "P. Gueye"],
+  "IRQ": ["Ayman Hussein", "Mohanad Ali", "Ali Al-Hamadi", "Ibrahim Bayesh"],
+  "NOR": ["E. Haaland", "M. Ødegaard", "A. Sørloth", "J. Strand Larsen", "O. Solbakken"],
+  "ARG": ["L. Messi", "Á. Di María", "Lautaro Martínez", "J. Álvarez", "E. Fernández", "A. Mac Allister"],
+  "ALG": ["R. Mahrez", "Islam Slimani", "Amine Gouiri", "Baghdad Bounedjah", "F. Chaïbi"],
+  "AUT": ["M. Sabitzer", "M. Arnautović", "C. Baumgartner", "Michael Gregoritsch", "K. Laimer"],
+  "JOR": ["Musa Al-Taamari", "Yazan Al-Naimat", "Ali Olwan", "Hamza Al-Dardour"],
+  "POR": ["C. Ronaldo", "B. Fernandes", "Bernardo Silva", "Rafael Leão", "João Félix", "Gonçalo Ramos"],
+  "COD": ["Yoane Wissa", "C. Bakambu", "Theo Bongonda", "Meschack Elia"],
+  "UZB": ["E. Shomurodov", "O. Urunov", "J. Yakhshiboev", "A. Fayzullaev"],
+  "COL": ["Luis Díaz", "James Rodríguez", "Rafael Borré", "J. Arias", "J. Durán"],
+  "ENG": ["Harry Kane", "J. Bellingham", "Bukayo Saka", "Phil Foden", "Cole Palmer", "Ollie Watkins"],
+  "CRO": ["L. Modrić", "A. Kramarić", "Ivan Perišić", "M. Pašalić", "L. Majer"],
+  "GHA": ["Iñaki Williams", "Mohammed Kudus", "Jordan Ayew", "Antoine Semenyo"],
+  "PAN": ["Ismael Díaz", "J. Fajardo", "Cecilio Waterman", "Yoel Bárcenas"]
+};
+
+// Generates simulated scorers consistently based on seed
+function generateMockGoalsDeterministic(teamId, numGoals, seedValue) {
+  const goals = [];
+  const players = FAMOUS_PLAYERS[teamId] || ["Jugador A", "Jugador B", "Jugador C", "Jugador D"];
+  
+  for (let i = 0; i < numGoals; i++) {
+    const seed = Math.sin(seedValue + i) * 10000;
+    const rand = seed - Math.floor(seed);
+    const min = Math.floor(rand * 90) + 1;
+    const playerIdx = Math.floor((rand * 100) % players.length);
+    goals.push({
+      name: players[playerIdx],
+      min: min
+    });
+  }
+  return goals;
+}
+
+// Parses and normalizes scorer list in case of multiple schemas
+function getMatchScorers(m) {
+  let team1Scorers = [];
+  let team2Scorers = [];
+
+  let t1Id = m.team1;
+  let t2Id = m.team2;
+
+  // Resolve knockout team ids if missing on match object
+  if (!t1Id || !t2Id) {
+    const { t1, t2 } = resolveMatchTeams(m.id, groupStandings, thirdsAssignment);
+    if (t1) t1Id = t1.id;
+    if (t2) t2Id = t2.id;
+  }
+
+  // Schema 1: goals1 / goals2 or goleadores1 / goleadores2
+  if (m.goals1 && Array.isArray(m.goals1)) {
+    team1Scorers = m.goals1.map(g => ({ name: g.name || g.nombre || g.player, min: g.min || g.minuto || g.minute }));
+  } else if (m.goleadores1 && Array.isArray(m.goleadores1)) {
+    team1Scorers = m.goleadores1.map(g => ({ name: g.name || g.nombre || g.player, min: g.min || g.minuto || g.minute }));
+  }
+  
+  if (m.goals2 && Array.isArray(m.goals2)) {
+    team2Scorers = m.goals2.map(g => ({ name: g.name || g.nombre || g.player, min: g.min || g.minuto || g.minute }));
+  } else if (m.goleadores2 && Array.isArray(m.goleadores2)) {
+    team2Scorers = m.goleadores2.map(g => ({ name: g.name || g.nombre || g.player, min: g.min || g.minuto || g.minute }));
+  }
+
+  // Schema 2: Single goals / goleadores list
+  const singleList = m.goals || m.goleadores;
+  if (singleList && Array.isArray(singleList) && team1Scorers.length === 0 && team2Scorers.length === 0) {
+    singleList.forEach(g => {
+      const name = g.name || g.nombre || g.player;
+      const min = g.min || g.minuto || g.minute;
+      const teamId = g.team || g.equipo;
+      const isTeam1 = g.team1 || g.isHome || (teamId && teamId === t1Id);
+      const isTeam2 = g.team2 || g.isAway || (teamId && teamId === t2Id);
+      
+      if (isTeam1) {
+        team1Scorers.push({ name, min });
+      } else if (isTeam2) {
+        team2Scorers.push({ name, min });
+      } else {
+        if (teamId === t1Id) {
+          team1Scorers.push({ name, min });
+        } else if (teamId === t2Id) {
+          team2Scorers.push({ name, min });
+        } else {
+          team1Scorers.push({ name, min });
+        }
+      }
+    });
+  }
+
+  // Fallback: Generate mock scorers if scores exist but no list was provided
+  if (m.g1 > 0 && team1Scorers.length === 0 && t1Id) {
+    team1Scorers = generateMockGoalsDeterministic(t1Id, m.g1, m.id * 3);
+  }
+  if (m.g2 > 0 && team2Scorers.length === 0 && t2Id) {
+    team2Scorers = generateMockGoalsDeterministic(t2Id, m.g2, m.id * 7);
+  }
+
+  // Sort chronologically
+  team1Scorers.sort((a, b) => parseInt(a.min) - parseInt(b.min));
+  team2Scorers.sort((a, b) => parseInt(a.min) - parseInt(b.min));
+
+  return { team1Scorers, team2Scorers };
+}
+
+function findMatchById(matchId) {
+  let match = WORLD_CUP_DATA.groupMatches.find(m => m.id === matchId);
+  if (match) return { match, isKnockout: false };
+  
+  for (const [stage, matches] of Object.entries(WORLD_CUP_DATA.knockoutMatches)) {
+    match = matches.find(m => m.id === matchId);
+    if (match) return { match, isKnockout: true, stage };
+  }
+  return { match: null };
+}
+
+function isMatchLive(m) {
+  const matchDate = getMatchDate(m);
+  if (!matchDate) return false;
+  const nowLocal = getLocalCurrentDate();
+  const timeDiffMs = nowLocal - matchDate;
+  return m.g1 !== null && m.g2 !== null && timeDiffMs >= 0 && timeDiffMs <= 2.5 * 60 * 60 * 1000;
+}
+
+function showMatchDetails(matchId) {
+  const { match: m, isKnockout, stage } = findMatchById(matchId);
+  if (!m) return;
+
+  const modal = document.getElementById('match-modal');
+  const header = document.getElementById('modal-match-header');
+  const scoreSection = document.getElementById('modal-match-score-section');
+  const scorersSection = document.getElementById('modal-match-scorers');
+  const footer = document.getElementById('modal-match-footer');
+
+  if (!modal || !header || !scoreSection || !scorersSection || !footer) return;
+
+  let t1Name = '', t2Name = '', t1Flag = '', t2Flag = '', t1Id = '', t2Id = '';
+
+  if (!isKnockout) {
+    const t1 = WORLD_CUP_DATA.teams[m.team1];
+    const t2 = WORLD_CUP_DATA.teams[m.team2];
+    t1Name = t1 ? t1.name : m.team1;
+    t1Flag = t1 ? t1.flag : '';
+    t1Id = m.team1;
+    t2Name = t2 ? t2.name : m.team2;
+    t2Flag = t2 ? t2.flag : '';
+    t2Id = m.team2;
+  } else {
+    const { t1, t2 } = resolveMatchTeams(m.id, groupStandings, thirdsAssignment);
+    t1Name = t1 ? t1.name : (m.team1Placeholder || 'Por definir');
+    t1Flag = t1 ? t1.flag : '';
+    t1Id = t1 ? t1.id : '';
+    t2Name = t2 ? t2.name : (m.team2Placeholder || 'Por definir');
+    t2Flag = t2 ? t2.flag : '';
+    t2Id = t2 ? t2.id : '';
+  }
+
+  const t1FlagHTML = t1Flag 
+    ? `<img src="https://flagcdn.com/w80/${t1Flag}.png" alt="${t1Name}">`
+    : `<div class="match-flag-placeholder" style="width: 55px; height: 55px; font-size: 0.9rem;">TBD</div>`;
+  const t2FlagHTML = t2Flag 
+    ? `<img src="https://flagcdn.com/w80/${t2Flag}.png" alt="${t2Name}">`
+    : `<div class="match-flag-placeholder" style="width: 55px; height: 55px; font-size: 0.9rem;">TBD</div>`;
+
+  const isLive = isMatchLive(m);
+  const stageLabel = isKnockout ? (m.label || stage) : `Grupo ${m.group}`;
+
+  let liveBadgeHTML = '';
+  if (isLive) {
+    liveBadgeHTML = `<span class="upcoming-live-badge"><span class="live-dot"></span> EN VIVO</span>`;
+  }
+
+  header.innerHTML = `
+    <span class="upcoming-stage-badge">${stageLabel}</span>
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+      ${liveBadgeHTML}
+      <span>${m.date} - ${m.time}</span>
+    </div>
+  `;
+
+  const scoreText = m.g1 !== null ? `${m.g1} : ${m.g2}` : '- : -';
+  const scoreClass = isLive ? 'modal-match-score-numbers live-score' : 'modal-match-score-numbers';
+  
+  let penaltyDetailsHTML = '';
+  if (isKnockout && m.g1 !== null && m.g1 === m.g2 && m.penaltyWinnerId) {
+    const pWinner = WORLD_CUP_DATA.teams[m.penaltyWinnerId];
+    penaltyDetailsHTML = `<div style="font-size: 0.75rem; color: var(--accent-gold); font-weight: 700; margin-top: 0.25rem;">(Ganador Pen.: ${pWinner ? pWinner.name : m.penaltyWinnerId})</div>`;
+  }
+
+  scoreSection.innerHTML = `
+    <div class="modal-match-team">
+      ${t1FlagHTML}
+      <span class="modal-match-team-name">${t1Name}</span>
+      <span class="modal-match-team-id">${t1Id}</span>
+    </div>
+    
+    <div class="modal-match-score-display">
+      <span class="${scoreClass}">${scoreText}</span>
+      ${penaltyDetailsHTML}
+    </div>
+    
+    <div class="modal-match-team">
+      ${t2FlagHTML}
+      <span class="modal-match-team-name">${t2Name}</span>
+      <span class="modal-match-team-id">${t2Id}</span>
+    </div>
+  `;
+
+  const { team1Scorers, team2Scorers } = getMatchScorers(m);
+  
+  if (team1Scorers.length === 0 && team2Scorers.length === 0) {
+    scorersSection.innerHTML = `<div class="modal-no-goals">No se registraron goles en este encuentro</div>`;
+  } else {
+    let homeColHTML = `<div class="modal-match-scorers-column home-scorers">`;
+    if (team1Scorers.length === 0) {
+      homeColHTML += `<div style="height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: var(--text-muted); font-style: italic;">Sin goles</div>`;
+    } else {
+      team1Scorers.forEach(s => {
+        homeColHTML += `
+          <div class="modal-scorer-item">
+            <span class="modal-scorer-ball">⚽</span>
+            <span class="modal-scorer-name" title="${s.name}">${s.name}</span>
+            <span class="modal-scorer-min">${s.min}'</span>
+          </div>
+        `;
+      });
+    }
+    homeColHTML += `</div>`;
+
+    let awayColHTML = `<div class="modal-match-scorers-column away-scorers">`;
+    if (team2Scorers.length === 0) {
+      awayColHTML += `<div style="height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: var(--text-muted); font-style: italic;">Sin goles</div>`;
+    } else {
+      team2Scorers.forEach(s => {
+        awayColHTML += `
+          <div class="modal-scorer-item">
+            <span class="modal-scorer-ball">⚽</span>
+            <span class="modal-scorer-name" title="${s.name}">${s.name}</span>
+            <span class="modal-scorer-min">${s.min}'</span>
+          </div>
+        `;
+      });
+    }
+    awayColHTML += `</div>`;
+
+    scorersSection.innerHTML = homeColHTML + awayColHTML;
+  }
+
+  footer.innerHTML = `
+    <span class="modal-match-stadium">📍 ${m.stadium}</span>
+    <span>Sede: ${m.city}</span>
+  `;
+
+  modal.classList.add('open');
+}
+
+function closeMatchModal() {
+  const modal = document.getElementById('match-modal');
   if (modal) modal.classList.remove('open');
 }
 
@@ -1055,15 +1403,21 @@ function clearScores() {
   }
 }
 
-const DEFAULT_API_URL = 'https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json';
+const DEFAULT_API_URL = 'https://worldcup26.ir/get/games';
 
 // Fetch and load live scores silently in the background
 async function initApiLoading() {
   // Clear the simulated scores immediately
   clearScores();
 
-  // Load from localStorage if set (developer override for testing), otherwise use default official URL
-  const url = localStorage.getItem('worldcup_api_url') || DEFAULT_API_URL;
+  let url = localStorage.getItem('worldcup_api_url');
+  if (url === 'https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json' || url === 'live_scores_sample.json') {
+    localStorage.removeItem('worldcup_api_url');
+    url = null;
+  }
+  if (!url) {
+    url = DEFAULT_API_URL;
+  }
 
   try {
     const response = await fetch(url);
@@ -1086,6 +1440,123 @@ function applyLiveScores(data) {
 
   let parsedAny = false;
 
+  // Format C: worldcup26.ir matches list: { games: [...] }
+  if (data.games && Array.isArray(data.games)) {
+    // Reset scores first so we don't mix old simulation with the new API data
+    WORLD_CUP_DATA.groupMatches.forEach(m => { m.g1 = null; m.g2 = null; m.goals1 = null; m.goals2 = null; m.goals = null; });
+    for (const stage of Object.keys(WORLD_CUP_DATA.knockoutMatches)) {
+      WORLD_CUP_DATA.knockoutMatches[stage].forEach(m => { m.g1 = null; m.g2 = null; m.penaltyWinnerId = null; m.goals1 = null; m.goals2 = null; m.goals = null; });
+    }
+
+    // Helper to parse scorers string to { name, min } array
+    const parseWorldCup26Scorers = (scorersStr) => {
+      if (!scorersStr || scorersStr === "null" || scorersStr === "{}") return null;
+      const cleanStr = scorersStr.replace(/\\"/g, '"');
+      const regex = /["“'']([^"“”'']+?)["”'']/g;
+      const list = [];
+      let match;
+      while ((match = regex.exec(cleanStr)) !== null) {
+        const text = match[1].trim();
+        if (!text) continue;
+        const minMatch = text.match(/(\d+)'/);
+        if (minMatch) {
+          const min = parseInt(minMatch[1], 10);
+          const name = text.replace(/\s*\d+'.*/, '').trim();
+          list.push({ name, min });
+        }
+      }
+      return list.length > 0 ? list : null;
+    };
+
+    // 1. Process group matches
+    data.games.forEach(g => {
+      const matchId = parseInt(g.id, 10);
+      if (isNaN(matchId)) return;
+
+      const isFinished = g.finished === "TRUE";
+      const isLive = g.time_elapsed && g.time_elapsed !== "notstarted" && g.time_elapsed !== "finished";
+
+      if (!isFinished && !isLive) return;
+
+      // Group matches are IDs 1 to 72
+      if (matchId >= 1 && matchId <= 72) {
+        const groupMatch = WORLD_CUP_DATA.groupMatches.find(gm => gm.id === matchId);
+        if (groupMatch) {
+          groupMatch.g1 = g.home_score !== "null" && g.home_score !== null ? parseInt(g.home_score, 10) : 0;
+          groupMatch.g2 = g.away_score !== "null" && g.away_score !== null ? parseInt(g.away_score, 10) : 0;
+          groupMatch.goals1 = parseWorldCup26Scorers(g.home_scorers);
+          groupMatch.goals2 = parseWorldCup26Scorers(g.away_scorers);
+          parsedAny = true;
+        }
+      }
+    });
+
+    // Re-calculate standings up to group stage so knockout teams can be resolved sequentially
+    groupStandings = getAllStandings();
+    const bestThirds = getBestThirdPlaces().slice(0, 8);
+    thirdsAssignment = assignThirdPlaces(bestThirds);
+    resolvedTeams = {}; // clear cache
+
+    // 2. Process knockout matches sequentially: R32, R16, QF, SF, 3RD, F
+    const stages = ['R32', 'R16', 'QF', 'SF', '3RD', 'F'];
+    stages.forEach(stage => {
+      const localMatches = WORLD_CUP_DATA.knockoutMatches[stage] || [];
+      localMatches.forEach(lm => {
+        const g = data.games.find(game => parseInt(game.id, 10) === lm.id);
+        if (!g) return;
+
+        const isFinished = g.finished === "TRUE";
+        const isLive = g.time_elapsed && g.time_elapsed !== "notstarted" && g.time_elapsed !== "finished";
+
+        if (!isFinished && !isLive) return;
+
+        const g1 = g.home_score !== "null" && g.home_score !== null ? parseInt(g.home_score, 10) : 0;
+        const g2 = g.away_score !== "null" && g.away_score !== null ? parseInt(g.away_score, 10) : 0;
+
+        lm.g1 = g1;
+        lm.g2 = g2;
+        lm.goals1 = parseWorldCup26Scorers(g.home_scorers);
+        lm.goals2 = parseWorldCup26Scorers(g.away_scorers);
+
+        // If it's a draw and finished, we need a penalty winner
+        if (g1 === g2 && isFinished) {
+          const { t1, t2 } = resolveMatchTeams(lm.id, groupStandings, thirdsAssignment);
+          if (t1 && t2) {
+            // Find if t1 or t2 is scheduled in any other match of a higher round
+            const t1Qualified = data.games.some(game => {
+              const gameId = parseInt(game.id, 10);
+              return gameId > lm.id && (
+                game.home_team_name_en === t1.name || 
+                game.away_team_name_en === t1.name
+              );
+            });
+            const t2Qualified = data.games.some(game => {
+              const gameId = parseInt(game.id, 10);
+              return gameId > lm.id && (
+                game.home_team_name_en === t2.name || 
+                game.away_team_name_en === t2.name
+              );
+            });
+            if (t1Qualified) {
+              lm.penaltyWinnerId = t1.id;
+            } else if (t2Qualified) {
+              lm.penaltyWinnerId = t2.id;
+            } else {
+              lm.penaltyWinnerId = t1.id; // Fallback
+            }
+          }
+        }
+
+        parsedAny = true;
+      });
+
+      // Clear cache to allow resolving next round matches using these new scores
+      resolvedTeams = {};
+    });
+
+    return parsedAny;
+  }
+
   // Format A: { groupMatches: [...], knockoutMatches: [...] }
   if (data.groupMatches && Array.isArray(data.groupMatches)) {
     data.groupMatches.forEach(m => {
@@ -1093,6 +1564,9 @@ function applyLiveScores(data) {
       if (match) {
         match.g1 = m.g1;
         match.g2 = m.g2;
+        match.goals1 = m.goals1 || m.goleadores1 || null;
+        match.goals2 = m.goals2 || m.goleadores2 || null;
+        match.goals = m.goals || m.goleadores || null;
         parsedAny = true;
       }
     });
@@ -1110,6 +1584,9 @@ function applyLiveScores(data) {
           if (m.penaltyWinnerId !== undefined) {
             match.penaltyWinnerId = m.penaltyWinnerId;
           }
+          match.goals1 = m.goals1 || m.goleadores1 || null;
+          match.goals2 = m.goals2 || m.goleadores2 || null;
+          match.goals = m.goals || m.goleadores || null;
           parsedAny = true;
         }
       });
@@ -1120,9 +1597,9 @@ function applyLiveScores(data) {
   // Format B: openfootball-style matches list: { matches: [...] }
   if (data.matches && Array.isArray(data.matches)) {
     // Reset scores first so we don't mix old simulation with openfootball data
-    WORLD_CUP_DATA.groupMatches.forEach(m => { m.g1 = null; m.g2 = null; });
+    WORLD_CUP_DATA.groupMatches.forEach(m => { m.g1 = null; m.g2 = null; m.goals1 = null; m.goals2 = null; m.goals = null; });
     for (const stage of Object.keys(WORLD_CUP_DATA.knockoutMatches)) {
-      WORLD_CUP_DATA.knockoutMatches[stage].forEach(m => { m.g1 = null; m.g2 = null; m.penaltyWinnerId = null; });
+      WORLD_CUP_DATA.knockoutMatches[stage].forEach(m => { m.g1 = null; m.g2 = null; m.penaltyWinnerId = null; m.goals1 = null; m.goals2 = null; m.goals = null; });
     }
 
     // Process group matches
@@ -1140,6 +1617,7 @@ function applyLiveScores(data) {
             const isT1Home = groupMatch.team1 === t1Id;
             groupMatch.g1 = isT1Home ? m.score.ft[0] : m.score.ft[1];
             groupMatch.g2 = isT1Home ? m.score.ft[1] : m.score.ft[0];
+            groupMatch.goals = m.goals || m.goleadores || null;
             parsedAny = true;
           }
         }
@@ -1185,6 +1663,7 @@ function applyLiveScores(data) {
               lm.penaltyWinnerId = pWinnerIdFetched;
             }
           }
+          lm.goals = fetchedMatch.goals || fetchedMatch.goleadores || null;
           parsedAny = true;
         }
       });

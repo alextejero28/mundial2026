@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mundial 2026 - Resultados en Vivo y Clasificación</title>
+  <title>Mundial 2026 - Resultados y Clasificación</title>
   <meta name="description"
     content="Sigue en tiempo real los resultados, estadísticas y la clasificación de la Copa del Mundo de la FIFA 2026. ¡Actualización automática al minuto!">
   <meta name="keywords"
@@ -48,7 +48,7 @@
       <nav class="sidebar-nav">
         <a href="index.html" class="sidebar-link active" id="nav-live">
           <span class="nav-icon">📡</span>
-          <span>Resultados en Vivo</span>
+          <span>Resultados</span>
         </a>
         <a href="predecir.html" class="sidebar-link" id="nav-predict">
           <span class="nav-icon">✍️</span>
@@ -148,6 +148,25 @@
       <h3 id="modal-stadium-title">Estadio</h3>
       <div id="modal-stadium-details" style="margin-top: 1rem; line-height: 1.6; color: var(--text-secondary);">
         <!-- Populated dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Match Details Modal -->
+  <div id="match-modal" class="stadium-modal" onclick="closeMatchModal()">
+    <div class="modal-content match-modal-content" onclick="event.stopPropagation()">
+      <button class="close-modal" onclick="closeMatchModal()">&times;</button>
+      <div id="modal-match-header" class="modal-match-header">
+        <!-- Stage, time, date, live indicator -->
+      </div>
+      <div id="modal-match-score-section" class="modal-match-score-section">
+        <!-- Teams, flags, large score -->
+      </div>
+      <div id="modal-match-scorers" class="modal-match-scorers">
+        <!-- Scorer columns -->
+      </div>
+      <div id="modal-match-footer" class="modal-match-footer">
+        <!-- Stadium details -->
       </div>
     </div>
   </div>
