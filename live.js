@@ -452,7 +452,7 @@ function renderGroupStage() {
             </div>
             
             <div class="score-display" style="font-weight: 800; font-size: 1.1rem; color: var(--accent-cyan); min-width: 60px; text-align: center;">
-              ${m.g1 !== null ? m.g1 : 0} : ${m.g2 !== null ? m.g2 : 0}
+              ${m.g1 !== null ? m.g1 : '-'} : ${m.g2 !== null ? m.g2 : '-'}
             </div>
             
             <div class="match-team team-away ${winnerClass2}">
@@ -622,7 +622,7 @@ function renderBracket() {
             </div>
             <div style="display: flex; align-items: center;">
               ${penaltyBadge}
-              <div class="bracket-team-score" style="margin-left: 0.5rem; width: 20px; text-align: right; font-weight: 700;">${scoreVal !== '' ? scoreVal : '0'}</div>
+              <div class="bracket-team-score" style="margin-left: 0.5rem; width: 20px; text-align: right; font-weight: 700;">${scoreVal !== '' ? scoreVal : '-'}</div>
             </div>
           </div>
         `;
@@ -660,7 +660,7 @@ function renderBracket() {
             </div>
             <div style="display: flex; align-items: center;">
               ${penaltyBadge}
-              <div class="bracket-team-score" style="margin-left: 0.5rem; width: 20px; text-align: right; font-weight: 700;">${scoreVal !== '' ? scoreVal : '0'}</div>
+              <div class="bracket-team-score" style="margin-left: 0.5rem; width: 20px; text-align: right; font-weight: 700;">${scoreVal !== '' ? scoreVal : '-'}</div>
             </div>
           </div>
         `;
@@ -1373,7 +1373,7 @@ const TEAM_NAME_TO_ID = {
   
   // Grupo K
   "portugal": "POR",
-  "dr congo": "COD", "rd congo": "COD", "congo dr": "COD", "democratic republic of congo": "COD",
+  "dr congo": "COD", "rd congo": "COD", "congo dr": "COD", "democratic republic of congo": "COD", "democratic republic of the congo": "COD",
   "uzbekistan": "UZB", "uzbekistán": "UZB",
   "colombia": "COL",
   
@@ -1419,19 +1419,43 @@ async function initApiLoading() {
     url = DEFAULT_API_URL;
   }
 
+  // 1. Try to load from localStorage cache first (Stale-While-Revalidate)
+  const cacheKey = `cached_scores_${url}`;
+  const cachedData = localStorage.getItem(cacheKey);
+  if (cachedData) {
+    try {
+      const data = JSON.parse(cachedData);
+      applyLiveScores(data);
+    } catch (e) {
+      console.warn('Failed to parse cached scores', e);
+    }
+  }
+
+  // Render immediately with cached (or cleared) data so the page displays instantly
+  renderAll();
+
+  // 2. Fetch fresh data in the background with a 5-second timeout
   try {
-    const response = await fetch(url);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
+    
+    // Save to cache
+    localStorage.setItem(cacheKey, JSON.stringify(data));
+    
+    // Apply and re-render
     applyLiveScores(data);
+    renderAll();
   } catch (error) {
-    console.warn('No se pudieron cargar los resultados en vivo. Permaneciendo en 0-0 por defecto.', error);
+    console.warn('No se pudieron cargar los resultados en vivo de la red. Permaneciendo con datos en caché.', error);
   }
-
-  // Render standings, fixtures, and bracket
-  renderAll();
 }
 
 // Dual format parser
@@ -1451,18 +1475,55 @@ function applyLiveScores(data) {
     // Helper to parse scorers string to { name, min } array
     const parseWorldCup26Scorers = (scorersStr) => {
       if (!scorersStr || scorersStr === "null" || scorersStr === "{}") return null;
-      const cleanStr = scorersStr.replace(/\\"/g, '"');
-      const regex = /["“'']([^"“”'']+?)["”'']/g;
+      
+      // Clean up string to be a valid JSON array of strings
+      let cleanStr = scorersStr.replace(/[“”]/g, '"');
+      cleanStr = cleanStr.replace(/\\"/g, '"');
+      cleanStr = cleanStr.trim();
+      
+      // Convert curly braces to square brackets if needed
+      if (cleanStr.startsWith('{')) {
+        cleanStr = '[' + cleanStr.substring(1);
+      }
+      if (cleanStr.endsWith('}')) {
+        cleanStr = cleanStr.substring(0, cleanStr.length - 1) + ']';
+      }
+
       const list = [];
-      let match;
-      while ((match = regex.exec(cleanStr)) !== null) {
-        const text = match[1].trim();
-        if (!text) continue;
-        const minMatch = text.match(/(\d+)'/);
-        if (minMatch) {
-          const min = parseInt(minMatch[1], 10);
-          const name = text.replace(/\s*\d+'.*/, '').trim();
-          list.push({ name, min });
+      try {
+        const parsed = JSON.parse(cleanStr);
+        if (Array.isArray(parsed)) {
+          parsed.forEach(text => {
+            if (typeof text !== 'string') return;
+            const digitMatch = text.match(/\d+/);
+            if (digitMatch) {
+              const firstDigitIndex = digitMatch.index;
+              const name = text.substring(0, firstDigitIndex).trim();
+              let min = text.substring(firstDigitIndex).trim();
+              // Remove single quotes to prevent duplicate quotes (e.g. 9'' instead of 9')
+              min = min.replace(/'/g, '');
+              if (name) {
+                list.push({ name, min });
+              }
+            }
+          });
+        }
+      } catch (e) {
+        console.warn('Error parsing scorers JSON', e, scorersStr);
+        
+        // Fallback to regex-based parser if JSON.parse fails
+        const regex = /["“'']([^"“”'']+?)["”'']/g;
+        let match;
+        while ((match = regex.exec(cleanStr)) !== null) {
+          const text = match[1].trim();
+          if (!text) continue;
+          const digitMatch = text.match(/\d+/);
+          if (digitMatch) {
+            const firstDigitIndex = digitMatch.index;
+            const name = text.substring(0, firstDigitIndex).trim();
+            let min = text.substring(firstDigitIndex).trim().replace(/'/g, '');
+            list.push({ name, min });
+          }
         }
       }
       return list.length > 0 ? list : null;
@@ -1470,23 +1531,32 @@ function applyLiveScores(data) {
 
     // 1. Process group matches
     data.games.forEach(g => {
-      const matchId = parseInt(g.id, 10);
-      if (isNaN(matchId)) return;
+      const isGroupType = g.type === "group" || (g.id && parseInt(g.id, 10) <= 72);
+      if (!isGroupType) return;
+      if (!g.home_team_name_en || !g.away_team_name_en) return;
 
-      const isFinished = g.finished === "TRUE";
-      const isLive = g.time_elapsed && g.time_elapsed !== "notstarted" && g.time_elapsed !== "finished";
+      const t1Id = getTeamIdByName(g.home_team_name_en);
+      const t2Id = getTeamIdByName(g.away_team_name_en);
 
-      if (!isFinished && !isLive) return;
-
-      // Group matches are IDs 1 to 72
-      if (matchId >= 1 && matchId <= 72) {
-        const groupMatch = WORLD_CUP_DATA.groupMatches.find(gm => gm.id === matchId);
+      if (t1Id && t2Id) {
+        const groupMatch = WORLD_CUP_DATA.groupMatches.find(gm => 
+          (gm.team1 === t1Id && gm.team2 === t2Id) || (gm.team1 === t2Id && gm.team2 === t1Id)
+        );
         if (groupMatch) {
-          groupMatch.g1 = g.home_score !== "null" && g.home_score !== null ? parseInt(g.home_score, 10) : 0;
-          groupMatch.g2 = g.away_score !== "null" && g.away_score !== null ? parseInt(g.away_score, 10) : 0;
-          groupMatch.goals1 = parseWorldCup26Scorers(g.home_scorers);
-          groupMatch.goals2 = parseWorldCup26Scorers(g.away_scorers);
-          parsedAny = true;
+          const isFinished = g.finished === "TRUE";
+          const isLive = g.time_elapsed && g.time_elapsed !== "notstarted" && g.time_elapsed !== "finished";
+
+          if (isFinished || isLive) {
+            const isT1Home = groupMatch.team1 === t1Id;
+            const homeScore = g.home_score !== "null" && g.home_score !== null ? parseInt(g.home_score, 10) : 0;
+            const awayScore = g.away_score !== "null" && g.away_score !== null ? parseInt(g.away_score, 10) : 0;
+
+            groupMatch.g1 = isT1Home ? homeScore : awayScore;
+            groupMatch.g2 = isT1Home ? awayScore : homeScore;
+            groupMatch.goals1 = isT1Home ? parseWorldCup26Scorers(g.home_scorers) : parseWorldCup26Scorers(g.away_scorers);
+            groupMatch.goals2 = isT1Home ? parseWorldCup26Scorers(g.away_scorers) : parseWorldCup26Scorers(g.home_scorers);
+            parsedAny = true;
+          }
         }
       }
     });
@@ -1502,7 +1572,18 @@ function applyLiveScores(data) {
     stages.forEach(stage => {
       const localMatches = WORLD_CUP_DATA.knockoutMatches[stage] || [];
       localMatches.forEach(lm => {
-        const g = data.games.find(game => parseInt(game.id, 10) === lm.id);
+        const { t1, t2 } = resolveMatchTeams(lm.id, groupStandings, thirdsAssignment);
+        if (!t1 || !t2) return; // not resolved yet
+
+        // Look for matching team pairing in fetched games
+        const g = data.games.find(game => {
+          if (game.type === "group") return false;
+          if (!game.home_team_name_en || !game.away_team_name_en) return false;
+          const apiT1Id = getTeamIdByName(game.home_team_name_en);
+          const apiT2Id = getTeamIdByName(game.away_team_name_en);
+          return (apiT1Id === t1.id && apiT2Id === t2.id) || (apiT1Id === t2.id && apiT2Id === t1.id);
+        });
+
         if (!g) return;
 
         const isFinished = g.finished === "TRUE";
@@ -1510,40 +1591,40 @@ function applyLiveScores(data) {
 
         if (!isFinished && !isLive) return;
 
-        const g1 = g.home_score !== "null" && g.home_score !== null ? parseInt(g.home_score, 10) : 0;
-        const g2 = g.away_score !== "null" && g.away_score !== null ? parseInt(g.away_score, 10) : 0;
+        const apiT1Id = getTeamIdByName(g.home_team_name_en);
+        const isT1Home = apiT1Id === t1.id;
 
-        lm.g1 = g1;
-        lm.g2 = g2;
-        lm.goals1 = parseWorldCup26Scorers(g.home_scorers);
-        lm.goals2 = parseWorldCup26Scorers(g.away_scorers);
+        const homeScore = g.home_score !== "null" && g.home_score !== null ? parseInt(g.home_score, 10) : 0;
+        const awayScore = g.away_score !== "null" && g.away_score !== null ? parseInt(g.away_score, 10) : 0;
+
+        lm.g1 = isT1Home ? homeScore : awayScore;
+        lm.g2 = isT1Home ? awayScore : homeScore;
+        lm.goals1 = isT1Home ? parseWorldCup26Scorers(g.home_scorers) : parseWorldCup26Scorers(g.away_scorers);
+        lm.goals2 = isT1Home ? parseWorldCup26Scorers(g.away_scorers) : parseWorldCup26Scorers(g.home_scorers);
 
         // If it's a draw and finished, we need a penalty winner
-        if (g1 === g2 && isFinished) {
-          const { t1, t2 } = resolveMatchTeams(lm.id, groupStandings, thirdsAssignment);
-          if (t1 && t2) {
-            // Find if t1 or t2 is scheduled in any other match of a higher round
-            const t1Qualified = data.games.some(game => {
-              const gameId = parseInt(game.id, 10);
-              return gameId > lm.id && (
-                game.home_team_name_en === t1.name || 
-                game.away_team_name_en === t1.name
-              );
-            });
-            const t2Qualified = data.games.some(game => {
-              const gameId = parseInt(game.id, 10);
-              return gameId > lm.id && (
-                game.home_team_name_en === t2.name || 
-                game.away_team_name_en === t2.name
-              );
-            });
-            if (t1Qualified) {
-              lm.penaltyWinnerId = t1.id;
-            } else if (t2Qualified) {
-              lm.penaltyWinnerId = t2.id;
-            } else {
-              lm.penaltyWinnerId = t1.id; // Fallback
-            }
+        if (lm.g1 === lm.g2 && isFinished) {
+          // Find if t1 or t2 is scheduled in any other match of a higher round
+          const t1Qualified = data.games.some(game => {
+            const gameId = parseInt(game.id, 10);
+            if (gameId <= lm.id) return false;
+            const apiHomeId = getTeamIdByName(game.home_team_name_en);
+            const apiAwayId = getTeamIdByName(game.away_team_name_en);
+            return apiHomeId === t1.id || apiAwayId === t1.id;
+          });
+          const t2Qualified = data.games.some(game => {
+            const gameId = parseInt(game.id, 10);
+            if (gameId <= lm.id) return false;
+            const apiHomeId = getTeamIdByName(game.home_team_name_en);
+            const apiAwayId = getTeamIdByName(game.away_team_name_en);
+            return apiHomeId === t2.id || apiAwayId === t2.id;
+          });
+          if (t1Qualified) {
+            lm.penaltyWinnerId = t1.id;
+          } else if (t2Qualified) {
+            lm.penaltyWinnerId = t2.id;
+          } else {
+            lm.penaltyWinnerId = t1.id; // Fallback
           }
         }
 
