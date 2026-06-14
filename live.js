@@ -1455,26 +1455,12 @@ async function initApiLoading(isAutoRefresh = false) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-    let response;
-    try {
-      response = await fetch(url, { signal: controller.signal });
-      clearTimeout(timeoutId);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-    } catch (directError) {
-      clearTimeout(timeoutId);
-      console.warn('Direct fetch failed. Retrying via CORS proxy...', directError);
-      const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
-      const proxyController = new AbortController();
-      const proxyTimeoutId = setTimeout(() => proxyController.abort(), 5000);
-      response = await fetch(proxyUrl, { signal: proxyController.signal });
-      clearTimeout(proxyTimeoutId);
-      if (!response.ok) {
-        throw new Error(`Proxy HTTP error! status: ${response.status}`);
-      }
-    }
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
 
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
     const data = await response.json();
     
     // Save to cache
