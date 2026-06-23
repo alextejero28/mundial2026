@@ -1565,8 +1565,9 @@ function applyLiveScores(data) {
           (gm.team1 === t1Id && gm.team2 === t2Id) || (gm.team1 === t2Id && gm.team2 === t1Id)
         );
         if (groupMatch) {
-          const isFinished = g.finished === "TRUE";
-          const isLive = g.time_elapsed && g.time_elapsed !== "notstarted" && g.time_elapsed !== "finished";
+          const elapsedLower = g.time_elapsed ? g.time_elapsed.toLowerCase().trim() : "";
+          const isFinished = g.finished === "TRUE" || elapsedLower === "finished";
+          const isLive = elapsedLower && elapsedLower !== "notstarted" && elapsedLower !== "finished";
 
           if (isFinished || isLive) {
             const isT1Home = groupMatch.team1 === t1Id;
@@ -1611,8 +1612,9 @@ function applyLiveScores(data) {
 
         if (!g) return;
 
-        const isFinished = g.finished === "TRUE";
-        const isLive = g.time_elapsed && g.time_elapsed !== "notstarted" && g.time_elapsed !== "finished";
+        const elapsedLower = g.time_elapsed ? g.time_elapsed.toLowerCase().trim() : "";
+        const isFinished = g.finished === "TRUE" || elapsedLower === "finished";
+        const isLive = elapsedLower && elapsedLower !== "notstarted" && elapsedLower !== "finished";
 
         if (!isFinished && !isLive) return;
 
