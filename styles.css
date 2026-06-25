@@ -749,12 +749,20 @@ main {
 
 .bracket-match-header {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.15rem;
   font-size: 0.65rem;
   color: var(--text-muted);
   border-bottom: 1px solid rgba(255,255,255,0.03);
   padding-bottom: 0.3rem;
   margin-bottom: 0.15rem;
+}
+
+.bracket-match-label {
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 
 .bracket-team-row {

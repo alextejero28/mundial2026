@@ -590,18 +590,16 @@ function renderBracket() {
     colElem.appendChild(headerElem);
 
     const createMatchCardHTML = (m) => {
-      let labelText = m.label;
       const isLive = isMatchLive(m);
       const liveBadgeHTML = isLive ? `<span class="bracket-live-dot" title="En Vivo"></span> ` : '';
-      const liveTimeLabel = isLive ? `<span class="live-time-text" style="color: #ef4444; font-weight: 700; font-size: 0.75rem;">${formatTimeElapsed(m.timeElapsed)}</span>` : labelText;
+      const liveTimeLabel = isLive ? `<span class="live-time-text">${formatTimeElapsed(m.timeElapsed)}</span>` : `${formatShortDate(m.date)}  -  ${m.time}`;
       
       let headerHTML = `
         <div class="bracket-match-header">
-          <span style="display: flex; align-items: center; gap: 0.25rem;">
+          <div style="display: flex; align-items: center; justify-content: center; gap: 0.25rem;">
             ${liveBadgeHTML}
             ${liveTimeLabel}
-          </span>
-          <span class="match-stadium" title="${m.stadium}, ${m.city}" onclick="event.stopPropagation(); showStadiumDetails('${m.stadium.replace(/'/g, "\\'")}', '${m.city.replace(/'/g, "\\'")}')" style="cursor: help;">${m.city}</span>
+          </div>
         </div>
       `;
 

@@ -692,3 +692,17 @@ if (document.readyState === 'loading') {
 } else {
   startHeaderClock();
 }
+
+function formatShortDate(dateStr) {
+  if (!dateStr) return '';
+  return dateStr
+    .replace(/domingo/i, 'Dom')
+    .replace(/lunes/i, 'Lun')
+    .replace(/martes/i, 'Mar')
+    .replace(/miércoles/i, 'Mié')
+    .replace(/jueves/i, 'Jue')
+    .replace(/viernes/i, 'Vie')
+    .replace(/sábado/i, 'Sáb')
+    .replace(/ de junio/i, ' Jun')
+    .replace(/ de julio/i, ' Jul');
+}

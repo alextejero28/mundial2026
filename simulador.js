@@ -696,11 +696,11 @@ function renderBracket() {
     colElem.appendChild(headerElem);
 
     const createMatchCardHTML = (m) => {
-      let labelText = m.label;
       let headerHTML = `
         <div class="bracket-match-header">
-          <span>${labelText}</span>
-          <span class="match-stadium" title="${m.stadium}, ${m.city}" onclick="showStadiumDetails('${m.stadium}', '${m.city}')" style="cursor: help;">${m.city}</span>
+          <div>
+            <span>${formatShortDate(m.date)}  -  ${m.time}</span>
+          </div>
         </div>
       `;
 
