@@ -198,7 +198,7 @@ const WORLD_CUP_DATA = {
         {
             "id": 75,
             "label": "Cruce 75",
-            "date": "Martes 30 de junio",
+            "date": "Lunes 29 de junio",
             "time": "21:00",
             "stadium": "Estadio BBVA",
             "city": "Monterrey",
@@ -228,7 +228,7 @@ const WORLD_CUP_DATA = {
         {
             "id": 79,
             "label": "Cruce 79",
-            "date": "Miércoles 1 de julio",
+            "date": "Martes 30 de junio",
             "time": "21:00",
             "stadium": "Estadio Azteca",
             "city": "CDMX",
@@ -268,7 +268,7 @@ const WORLD_CUP_DATA = {
         {
             "id": 81,
             "label": "Cruce 81",
-            "date": "Jueves 2 de julio",
+            "date": "Miércoles 1 de julio",
             "time": "20:00",
             "stadium": "Levi's Stadium",
             "city": "Santa Clara",
@@ -358,7 +358,7 @@ const WORLD_CUP_DATA = {
         {
             "id": 92,
             "label": "Cruce 92",
-            "date": "Lunes 6 de julio",
+            "date": "Domingo 5 de julio",
             "time": "20:00",
             "stadium": "Estadio Azteca",
             "city": "CDMX",
@@ -400,7 +400,7 @@ const WORLD_CUP_DATA = {
         {
             "id": 94,
             "label": "Cruce 94",
-            "date": "Martes 7 de julio",
+            "date": "Lunes 6 de julio",
             "time": "20:00",
             "stadium": "Lumen Field",
             "city": "Seattle",
@@ -472,7 +472,7 @@ const WORLD_CUP_DATA = {
         {
             "id": 99,
             "label": "Cruce 99",
-            "date": "Sábado 11 de julio",
+            "date": "Domingo 12 de julio",
             "time": "17:00",
             "stadium": "Hard Rock Stadium",
             "city": "Miami",
@@ -486,7 +486,7 @@ const WORLD_CUP_DATA = {
         {
             "id": 100,
             "label": "Cruce 100",
-            "date": "Sábado 11 de julio",
+            "date": "Domingo 12 de julio",
             "time": "21:00",
             "stadium": "Arrowhead Stadium",
             "city": "Kansas City",
