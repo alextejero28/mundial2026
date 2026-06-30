@@ -302,6 +302,29 @@ function getBestThirdPlaces() {
 }
 
 function assignThirdPlaces(bestThirdTeams) {
+  // Official FIFA combinations override for BDEFIJKL
+  const qualifiedGroups = bestThirdTeams.slice(0, 8).map(t => t.groupOrigin).sort().join('');
+  if (qualifiedGroups === 'BDEFIJKL') {
+    const groupsMap = {
+      74: 'D', // Alemania vs Paraguay
+      77: 'F', // Francia vs Suecia
+      79: 'E', // México vs Ecuador
+      80: 'K', // Inglaterra vs RD Congo
+      81: 'B', // Estados Unidos vs Bosnia
+      82: 'I', // Bélgica vs Senegal
+      85: 'J', // Suiza vs Argelia
+      87: 'L'  // Portugal vs Ghana
+    };
+    const assignment = {};
+    for (const [matchId, groupLetter] of Object.entries(groupsMap)) {
+      const team = bestThirdTeams.find(t => t.groupOrigin === groupLetter);
+      if (team) {
+        assignment[matchId] = team;
+      }
+    }
+    return assignment;
+  }
+
   const result = findAssignment(slots, bestThirdTeams, 0, {}, new Set());
   if (result) return result;
 
